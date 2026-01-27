@@ -12,6 +12,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import packageJson from '../../package.json';
 
 interface DashboardProps {
   user: {
@@ -20,6 +21,7 @@ interface DashboardProps {
     name: string;
     role: string;
   };
+  version: string;
 }
 
 interface ActivityLog {
@@ -37,7 +39,7 @@ interface ActivityLog {
   };
 }
 
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard({ user, version }: DashboardProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
@@ -281,6 +283,15 @@ export default function Dashboard({ user }: DashboardProps) {
             )}
           </div>
         </div>
+
+        {/* Footer with Version */}
+        <footer className="bg-stone-800 border-t-4 border-stone-700 mt-8">
+          <div className="container mx-auto px-4 py-4 text-center">
+            <p className="text-stone-400 text-sm">
+              SMP Admin Panel v{version} | © {new Date().getFullYear()}
+            </p>
+          </div>
+        </footer>
       </div>
     </>
   );
@@ -298,9 +309,18 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
+  // Ensure all user fields are serializable (no undefined values)
+  const user = {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+    role: session.user.role,
+  };
+
   return {
     props: {
-      user: session.user,
+      user,
+      version: packageJson.version,
     },
   };
 };

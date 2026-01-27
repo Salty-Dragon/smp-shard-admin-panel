@@ -372,9 +372,17 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
+  // Ensure all user fields are serializable (no undefined values)
+  const user = {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+    role: session.user.role,
+  };
+
   return {
     props: {
-      user: session.user,
+      user,
     },
   };
 };
