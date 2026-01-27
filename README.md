@@ -44,7 +44,7 @@ When you set `basePath: '/apanel44'` in `next.config.ts`:
    - `/src/pages/dashboard.tsx` → `https://example.com/apanel44/dashboard`
 
 **Common Mistakes to Avoid:**
-- ❌ Using `href="/apanel44/dashboard"` (causes double prefix: `/apanel44/apanel44/dashboard`)
+- ❌ Using `href="/apanel44/dashboard"` (causes double prefix: `/apanel44/apanel/dashboard`)
 - ❌ Putting pages in `/pages/apanel44/` directory (also causes double prefix)
 - ✅ Use `href="/dashboard"` (Next.js adds the basePath automatically)
 - ✅ Keep pages in `/pages/` directory at root level
@@ -368,7 +368,7 @@ This happens when the basePath is incorrectly applied twice.
 - Links used absolute paths like `href="/apanel44/dashboard"` instead of relative paths
 
 **Solution (Already Fixed):**
-- ✅ Pages moved to `/src/pages/` (root level, not in apanel44 subdirectory)
+- ✅ Pages moved to `/src/pages/` (root level, not in apanel subdirectory)
 - ✅ All links updated to use relative paths: `href="/dashboard"` instead of `href="/apanel44/dashboard"`
 - ✅ NextAuth `pages.signIn` and `pages.error` correctly set to `${BASE_PATH}/login`
 - ✅ All redirects in `getServerSideProps` updated to use relative paths

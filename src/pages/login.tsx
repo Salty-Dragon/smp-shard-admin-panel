@@ -98,6 +98,7 @@ export default function Login() {
                       className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
                       required
                       disabled={loading}
+                      autoComplete="email"
                     />
                   </div>
 
@@ -114,6 +115,7 @@ export default function Login() {
                       className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
                       required
                       disabled={loading}
+                      autoComplete="current-password"
                     />
                   </div>
                 </>
@@ -135,6 +137,7 @@ export default function Login() {
                       required
                       disabled={loading}
                       autoFocus
+                      autoComplete="one-time-code"
                     />
                     <p className="mt-2 text-stone-400 text-sm">
                       Enter the 6-digit code from your authenticator app or email
