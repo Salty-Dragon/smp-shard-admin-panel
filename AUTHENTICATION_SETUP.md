@@ -42,7 +42,7 @@ SMTP_PASS="your-smtp-password"
 
 # NextAuth.js Configuration
 SECRET="your-generated-secret-here"
-NEXTAUTH_URL="http://localhost:3000/apanel44"
+NEXTAUTH_URL="http://localhost:3000/apanel"
 ```
 
 Generate a secure secret for NextAuth.js:
@@ -94,11 +94,11 @@ Start the development server:
 npm run dev
 ```
 
-Access the application at: `http://localhost:3000/apanel44/login`
+Access the application at: `http://localhost:3000/apanel/login`
 
 ## Step 4: First Login
 
-1. Navigate to `http://localhost:3000/apanel44/login`
+1. Navigate to `http://localhost:3000/apanel/login`
 2. Login with default credentials:
    - Email: `admin@smp-panel.local`
    - Password: `admin123`
@@ -248,7 +248,7 @@ Update `.env` for production:
 
 ```env
 NODE_ENV="production"
-NEXTAUTH_URL="https://yourdomain.com/apanel44"
+NEXTAUTH_URL="https://yourdomain.com/apanel"
 DATABASE_URL="mysql://username:password@localhost:3306/smp_admin_panel"
 ```
 

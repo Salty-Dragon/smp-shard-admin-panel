@@ -342,6 +342,7 @@ export default function UsersPage({ user }: UsersPageProps) {
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 <div>
@@ -411,6 +412,7 @@ export default function UsersPage({ user }: UsersPageProps) {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                    autoComplete="new-password"
                   />
                 </div>
                 <div>

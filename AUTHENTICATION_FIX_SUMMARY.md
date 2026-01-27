@@ -5,11 +5,11 @@ This document summarizes the changes made to fix authentication and session pers
 ## Issues Fixed
 
 ### 1. Session Not Persisting
-**Problem:** `/apanel44/api/auth/session` was returning empty `{}` after login.
+**Problem:** `/apanel/api/auth/session` was returning empty `{}` after login.
 
 **Root Causes:**
 - Missing or incorrect `SECRET` environment variable
-- Incorrect `NEXTAUTH_URL` (missing `/apanel44` basePath)
+- Incorrect `NEXTAUTH_URL` (missing `/apanel` basePath)
 - Cookie path mismatches
 - Cross-origin issues
 
@@ -26,7 +26,7 @@ This document summarizes the changes made to fix authentication and session pers
 - Incorrect use of basePath in client-side redirects
 
 **Solution:**
-- Fixed client-side redirects to use relative paths (e.g., `/dashboard` instead of `/apanel44/dashboard`)
+- Fixed client-side redirects to use relative paths (e.g., `/dashboard` instead of `/apanel/dashboard`)
 - Next.js automatically prepends the basePath from `next.config.ts`
 - Updated all redirects to be basePath-aware
 
@@ -34,7 +34,7 @@ This document summarizes the changes made to fix authentication and session pers
 **Problem:** Login errors were redirecting to `/api/auth/error` (404) instead of showing on login page.
 
 **Status:** Already fixed in NextAuth configuration
-- Errors redirect to `/apanel44/login` instead
+- Errors redirect to `/apanel/login` instead
 - Error messages display on the login page itself
 
 ### 4. Lack of Debugging Information
@@ -59,13 +59,13 @@ Helps verify environment variable configuration.
 **Development Access:**
 ```bash
 # Automatically accessible in development mode
-curl http://localhost:3000/apanel44/api/debug/env
+curl http://localhost:3000/apanel/api/debug/env
 ```
 
 **Production Access:**
 ```bash
 # Requires DEBUG_TOKEN environment variable and header
-curl -H "X-Debug-Token: your-secret-token" https://v1rtopia.com/apanel44/api/debug/env
+curl -H "X-Debug-Token: your-secret-token" https://v1rtopia.com/apanel/api/debug/env
 ```
 
 **Returns:**
@@ -73,7 +73,7 @@ curl -H "X-Debug-Token: your-secret-token" https://v1rtopia.com/apanel44/api/deb
 {
   "message": "Environment variables status",
   "env": {
-    "NEXTAUTH_URL": "http://localhost:3000/apanel44",
+    "NEXTAUTH_URL": "http://localhost:3000/apanel",
     "SECRET": "***SET***",
     "SECRET_LENGTH": 43,
     "NODE_ENV": "development",
@@ -95,8 +95,8 @@ curl -H "X-Debug-Token: your-secret-token" https://v1rtopia.com/apanel44/api/deb
 DATABASE_URL="mysql://user:password@localhost:3306/smp_admin_panel"
 
 # NextAuth configuration
-# CRITICAL: Must include /apanel44 basePath
-NEXTAUTH_URL="http://localhost:3000/apanel44"  # or https://v1rtopia.com/apanel44 in production
+# CRITICAL: Must include /apanel basePath
+NEXTAUTH_URL="http://localhost:3000/apanel"  # or https://v1rtopia.com/apanel in production
 SECRET="generate-with-openssl-rand-base64-32"
 
 # SMTP for 2FA email codes
@@ -146,8 +146,8 @@ When a user logs in, you'll see detailed logs:
 Before deploying, verify:
 
 - [ ] Environment variables are set correctly
-  - Visit `/apanel44/api/debug/env` to verify
-  - Check `NEXTAUTH_URL` includes `/apanel44`
+  - Visit `/apanel/api/debug/env` to verify
+  - Check `NEXTAUTH_URL` includes `/apanel`
   - Check `SECRET` is set and has sufficient length (>= 32 chars)
 
 - [ ] Database is accessible
@@ -162,19 +162,19 @@ Before deploying, verify:
   - Check for any TypeScript or build errors
 
 - [ ] Login flow works
-  - Navigate to `/apanel44/login`
+  - Navigate to `/apanel/login`
   - Enter valid credentials
-  - Verify redirect to `/apanel44/dashboard`
+  - Verify redirect to `/apanel/dashboard`
   - Check browser cookies (should see `next-auth.session-token`)
 
 - [ ] Session persists
-  - After login, visit `/apanel44/api/auth/session`
+  - After login, visit `/apanel/api/auth/session`
   - Should return user object with email, name, role
   - Should NOT return empty `{}`
 
 - [ ] Logout works
   - Click logout button
-  - Should redirect to `/apanel44/login`
+  - Should redirect to `/apanel/login`
   - Session should be cleared
 
 ## Common Issues & Solutions
@@ -191,24 +191,24 @@ Before deploying, verify:
 
 ### Issue: Empty `{}` from `/api/auth/session`
 **Check:**
-- `NEXTAUTH_URL` includes `/apanel44` basePath
+- `NEXTAUTH_URL` includes `/apanel` basePath
 - `SECRET` environment variable is set
 - Cookies are being set in browser (DevTools > Application > Cookies)
 - Accessing app from same origin as `NEXTAUTH_URL`
 
 **Debug:**
-- Visit `/apanel44/api/debug/env`
+- Visit `/apanel/api/debug/env`
 - Check that `NEXTAUTH_URL` and `SECRET` show as `***SET***`
-- Check browser cookies for `next-auth.session-token` with path `/apanel44`
+- Check browser cookies for `next-auth.session-token` with path `/apanel`
 
 ### Issue: Redirect loop or 404 after login
 **Check:**
-- `basePath: '/apanel44'` is set in `next.config.ts`
-- Not manually prepending `/apanel44` in redirects
+- `basePath: '/apanel'` is set in `next.config.ts`
+- Not manually prepending `/apanel` in redirects
 - `trailingSlash: true` is set in `next.config.ts`
 
 **Solution:**
-- Use relative paths in redirects: `/dashboard` not `/apanel44/dashboard`
+- Use relative paths in redirects: `/dashboard` not `/apanel/dashboard`
 - Next.js handles basePath automatically
 
 ### Issue: CORS or cross-origin errors
@@ -281,7 +281,7 @@ For deployment:
 
 For troubleshooting:
 - Enable development mode: `NODE_ENV=development`
-- Check environment variables: `/apanel44/api/debug/env`
+- Check environment variables: `/apanel/api/debug/env`
 - Review server logs for detailed authentication flow
 - Check browser DevTools for client-side errors and cookies
 

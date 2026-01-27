@@ -168,6 +168,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                 placeholder="Enter password"
                 className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
                 autoFocus
+                autoComplete="current-password"
               />
               <button
                 type="submit"
