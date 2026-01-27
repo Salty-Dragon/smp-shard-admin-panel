@@ -12,6 +12,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import packageJson from '../../package.json';
 
 interface DashboardProps {
   user: {
@@ -316,15 +317,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     role: session.user.role,
   };
 
-  // Get version from package.json
-  // Using require for compatibility with Next.js server-side rendering
-  const packageJson = require('../../package.json');
-  const version = packageJson.version;
-
   return {
     props: {
       user,
-      version,
+      version: packageJson.version,
     },
   };
 };
