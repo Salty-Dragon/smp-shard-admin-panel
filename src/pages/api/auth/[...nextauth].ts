@@ -156,7 +156,6 @@ export const authOptions: NextAuthOptions = {
       },
     },
   },
-  basePath: '/apanel44/api/auth',
   secret: process.env.SECRET || 'dev-secret-change-in-production',
   debug: process.env.NODE_ENV === 'development',
 };
