@@ -62,7 +62,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
+    await signOut({ callbackUrl: '/apanel44/login' });
   };
 
   const getActionIcon = (actionType: string) => {
