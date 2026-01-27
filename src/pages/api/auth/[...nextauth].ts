@@ -8,6 +8,9 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 
+// Base path for the application - must match next.config.ts basePath
+const BASE_PATH = '/apanel44';
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -121,8 +124,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/apanel44/login',
-    error: '/apanel44/login',
+    signIn: `${BASE_PATH}/login`,
+    error: `${BASE_PATH}/login`,
   },
   session: {
     strategy: 'jwt',
@@ -134,12 +137,30 @@ export const authOptions: NextAuthOptions = {
       options: {
         httpOnly: true,
         sameSite: 'lax',
-        path: '/',
+        path: BASE_PATH,
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: BASE_PATH,
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: BASE_PATH,
         secure: process.env.NODE_ENV === 'production',
       },
     },
   },
   secret: process.env.SECRET || 'dev-secret-change-in-production',
+  debug: process.env.NODE_ENV === 'development',
 };
 
 export default NextAuth(authOptions);

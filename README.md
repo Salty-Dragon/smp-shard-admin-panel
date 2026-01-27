@@ -130,10 +130,20 @@ SMTP_PORT="587"
 SMTP_USER="noreply@example.com"
 SMTP_PASS="your-smtp-password"
 
-# NextAuth.js - Session encryption
+# NextAuth.js - Session encryption and URL
 SECRET="generate-a-random-secure-string"
-NEXTAUTH_URL="http://localhost:3000"
+# IMPORTANT: Include the basePath (/apanel44) in the URL
+NEXTAUTH_URL="http://localhost:3000/apanel44"
+
+# Development mode (enables debug logging)
+NODE_ENV="development"
 ```
+
+**Important Notes:**
+- The `NEXTAUTH_URL` **must** include the `/apanel44` basePath for authentication to work correctly
+- In production, set `NEXTAUTH_URL` to your domain with the basePath (e.g., `https://v1rtopia.com/apanel44`)
+- All authentication cookies are scoped to the `/apanel44` path
+- Authentication errors will redirect to `/apanel44/login` (not `/api/auth/error`)
 
 ### Generate a secure SECRET
 
@@ -149,6 +159,25 @@ The panel supports two authentication methods:
 2. **Google Authenticator**: TOTP-based authentication using speakeasy
 
 Both methods can be configured per user for enhanced security.
+
+### Authentication Flow & Error Handling
+
+**Login Process:**
+1. User enters email and password at `/apanel44/login`
+2. If 2FA is enabled, user is prompted for a 2FA code
+3. On success, user is redirected to `/apanel44/dashboard`
+4. On error, user sees an error message on the login page (no external redirect)
+
+**Cookie Configuration:**
+- All NextAuth cookies are scoped to `/apanel44` path
+- Cookies: `next-auth.session-token`, `next-auth.callback-url`, `next-auth.csrf-token`
+- In production, cookies are set with `secure: true` flag
+
+**Debugging Authentication Issues:**
+- Set `NODE_ENV=development` in `.env` to enable NextAuth debug logging
+- Check browser console for client-side errors
+- Check server console for authentication errors (e.g., invalid credentials, 2FA failures)
+- Verify `NEXTAUTH_URL` includes the `/apanel44` basePath
 
 ## 🚀 Production Deployment
 
@@ -237,23 +266,38 @@ location /apanel44/_next/static/ {
 Update your `.env` file for production:
 
 ```env
-# Production URL with basePath (note: includes trailing slash for consistency)
-NEXTAUTH_URL="https://v1rtopia.com/apanel44/"
+# Production URL with basePath
+# IMPORTANT: Include the /apanel44 basePath in the URL for authentication to work
+NEXTAUTH_URL="https://v1rtopia.com/apanel44"
+
+# Use production mode to disable debug logging
+NODE_ENV="production"
 
 # Other environment variables...
 DATABASE_URL="mysql://user:password@localhost:3306/smp_admin_panel"
 SECRET="your-production-secret-here"
+SMTP_HOST="mail.example.com"
+SMTP_PORT="587"
+SMTP_USER="noreply@example.com"
+SMTP_PASS="your-smtp-password"
+LOG_ACCESS_PASSWORD="strong-password-here"
 ```
+
+**Critical for Authentication:**
+- `NEXTAUTH_URL` must include the `/apanel44` basePath
+- Without this, authentication will fail and redirect to non-existent error pages
+- Trailing slash is optional but should match your Nginx configuration
 
 ### Deployment Checklist
 
 When deploying to production, follow these steps to avoid issues:
 
-1. **Update `next.config.ts`** ✓ Already configured with `trailingSlash: true`
-2. **Configure Nginx** using the provided `nginx.conf` file
-3. **Build the Next.js application**: `npm run build`
-4. **Start the production server**: `npm run start` (or use PM2/systemd)
-5. **Test Nginx configuration**: `sudo nginx -t`
+1. **Update `.env` file** with production values (see above)
+2. **Update `next.config.ts`** ✓ Already configured with `trailingSlash: true`
+3. **Configure Nginx** using the provided `nginx.conf` file
+4. **Build the Next.js application**: `npm run build`
+5. **Start the production server**: `npm run start` (or use PM2/systemd)
+6. **Test Nginx configuration**: `sudo nginx -t`
 6. **Reload Nginx**: `sudo systemctl reload nginx`
 7. **Test the deployment**:
    - Access `https://v1rtopia.com/apanel44` (should redirect to `/apanel44/`)
