@@ -1,13 +1,95 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
+}
+
+// User model for authentication
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String
+  name              String
+  roleId            String
+  role              Role     @relation(fields: [roleId], references: [id])
+  
+  // 2FA Configuration
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorMethod   String?  // 'email' or 'totp'
+  totpSecret        String?  // For Google Authenticator
+  emailOTP          String?  // Current OTP for email method
+  emailOTPExpiry    DateTime? // OTP expiration time
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastLogin         DateTime?
+  
+  // Relations
+  activityLogs      ActivityLog[]
+  
+  @@index([roleId])
+  @@index([email])
+}
+
+// Role model for RBAC
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // 'Super Admin', 'Admin', 'Moderator'
+  description String?
+  
+  // Timestamps
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  users       User[]
+  permissions Permission[]
+}
+
+// Permission model for RBAC
+model Permission {
+  id          String   @id @default(uuid())
+  roleId      String
+  role        Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  
+  // Permission details
+  resource    String   // e.g., 'logs', 'users', 'roles', 'dashboard', 'server'
+  action      String   // e.g., 'read', 'write', 'delete', 'manage'
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([roleId, resource, action])
+  @@index([roleId])
+}
+
+// Activity Log model for tracking user actions
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Action details
+  actionType  String   // e.g., 'login', 'logout', 'create_user', 'update_role', 'server_command'
+  resource    String?  // e.g., 'user', 'role', 'server'
+  resourceId  String?  // ID of affected resource
+  details     String?  @db.Text // JSON string with additional details
+  
+  // Request metadata
+  ipAddress   String?
+  userAgent   String?  @db.Text
+  
+  // Timestamp
+  timestamp   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([timestamp])
+  @@index([actionType])
 }
