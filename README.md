@@ -487,7 +487,18 @@ For troubleshooting authentication issues, use these debug endpoints:
 1. **Check Environment Variables**: `/apanel44/api/debug/env`
    - Shows which environment variables are set (values masked)
    - Verifies `NEXTAUTH_URL` and `SECRET` configuration
-   - Only accessible in development mode or with `X-Debug-Token` header
+   - **Access Control:**
+     - Automatically accessible in development mode (`NODE_ENV=development`)
+     - In production, requires `X-Debug-Token` header matching `DEBUG_TOKEN` environment variable
+     - Example production usage:
+       ```bash
+       # Set DEBUG_TOKEN in your .env file
+       DEBUG_TOKEN="your-secret-debug-token-here"
+       
+       # Access the endpoint with the token
+       curl -H "X-Debug-Token: your-secret-debug-token-here" https://v1rtopia.com/apanel44/api/debug/env
+       ```
+   - **Security Note:** Set a strong `DEBUG_TOKEN` in production and keep it secret
 
 2. **Check Session**: `/apanel44/api/auth/session`
    - Returns current session object (empty `{}` if not logged in)

@@ -1,14 +1,22 @@
 /**
  * Debug endpoint to check environment variables
- * WARNING: This should be protected or removed in production
+ * 
+ * Security Considerations:
+ * - Automatically accessible in development mode for easier debugging
+ * - In production, requires X-Debug-Token header matching DEBUG_TOKEN env var
+ * - Consider adding rate limiting or IP restrictions if exposed publicly
+ * - All sensitive values are masked (shown as ***SET*** instead of actual values)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow in development or with special header
-  if (process.env.NODE_ENV === 'production' && req.headers['x-debug-token'] !== process.env.DEBUG_TOKEN) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (process.env.NODE_ENV === 'production') {
+    const debugToken = process.env.DEBUG_TOKEN;
+    if (!debugToken || req.headers['x-debug-token'] !== debugToken) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
   }
 
   const envVars = {

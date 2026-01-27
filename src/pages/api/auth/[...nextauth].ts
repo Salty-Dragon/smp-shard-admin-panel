@@ -21,8 +21,10 @@ export const authOptions: NextAuthOptions = {
         twoFactorCode: { label: '2FA Code', type: 'text' },
       },
       async authorize(credentials) {
-        console.log('[NextAuth] authorize() called');
-        console.log('[NextAuth] Credentials received:', {
+        const isDev = process.env.NODE_ENV === 'development';
+        
+        if (isDev) console.log('[NextAuth] authorize() called');
+        if (isDev) console.log('[NextAuth] Credentials received:', {
           email: credentials?.email || 'MISSING',
           password: credentials?.password ? '***' : 'MISSING',
           twoFactorCode: credentials?.twoFactorCode ? '***' : 'NOT_PROVIDED',
@@ -34,18 +36,18 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Find user by email
-        console.log('[NextAuth] Looking up user:', credentials.email);
+        if (isDev) console.log('[NextAuth] Looking up user:', credentials.email);
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
           include: { role: true },
         });
 
         if (!user) {
-          console.error('[NextAuth] User not found:', credentials.email);
+          console.error('[NextAuth] User not found');
           throw new Error('Invalid credentials');
         }
 
-        console.log('[NextAuth] User found:', {
+        if (isDev) console.log('[NextAuth] User found:', {
           id: user.id,
           email: user.email,
           name: user.name,
@@ -55,29 +57,29 @@ export const authOptions: NextAuthOptions = {
         });
 
         // Verify password
-        console.log('[NextAuth] Verifying password...');
+        if (isDev) console.log('[NextAuth] Verifying password...');
         const isValidPassword = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
         if (!isValidPassword) {
-          console.error('[NextAuth] Invalid password for user:', credentials.email);
+          console.error('[NextAuth] Invalid password');
           throw new Error('Invalid credentials');
         }
 
-        console.log('[NextAuth] Password verified successfully');
+        if (isDev) console.log('[NextAuth] Password verified successfully');
 
         // If 2FA is enabled, verify the code
         if (user.twoFactorEnabled) {
-          console.log('[NextAuth] 2FA enabled for user, method:', user.twoFactorMethod);
+          if (isDev) console.log('[NextAuth] 2FA enabled for user, method:', user.twoFactorMethod);
           
           if (!credentials.twoFactorCode) {
             console.error('[NextAuth] 2FA code required but not provided');
             throw new Error('2FA code required');
           }
 
-          console.log('[NextAuth] Verifying 2FA code...');
+          if (isDev) console.log('[NextAuth] Verifying 2FA code...');
 
           // Verify 2FA code based on method
           const { verifyTOTPToken, verifyEmailOTP } = await import('@/lib/auth');
@@ -85,18 +87,18 @@ export const authOptions: NextAuthOptions = {
           let isValid2FA = false;
           
           if (user.twoFactorMethod === 'totp' && user.totpSecret) {
-            console.log('[NextAuth] Verifying TOTP code');
+            if (isDev) console.log('[NextAuth] Verifying TOTP code');
             isValid2FA = verifyTOTPToken(credentials.twoFactorCode, user.totpSecret);
-            console.log('[NextAuth] TOTP verification result:', isValid2FA);
+            if (isDev) console.log('[NextAuth] TOTP verification result:', isValid2FA);
           } else if (user.twoFactorMethod === 'email' && user.emailOTP) {
-            console.log('[NextAuth] Verifying email OTP');
+            if (isDev) console.log('[NextAuth] Verifying email OTP');
             // Check if OTP is expired
             if (user.emailOTPExpiry && user.emailOTPExpiry < new Date()) {
               console.error('[NextAuth] Email OTP expired');
               throw new Error('OTP expired. Please request a new one.');
             }
             isValid2FA = verifyEmailOTP(credentials.twoFactorCode, user.emailOTP);
-            console.log('[NextAuth] Email OTP verification result:', isValid2FA);
+            if (isDev) console.log('[NextAuth] Email OTP verification result:', isValid2FA);
           }
 
           if (!isValid2FA) {
@@ -104,7 +106,7 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Invalid 2FA code');
           }
 
-          console.log('[NextAuth] 2FA verification successful');
+          if (isDev) console.log('[NextAuth] 2FA verification successful');
 
           // Clear email OTP after successful verification
           if (user.twoFactorMethod === 'email') {
@@ -112,19 +114,19 @@ export const authOptions: NextAuthOptions = {
               where: { id: user.id },
               data: { emailOTP: null, emailOTPExpiry: null },
             });
-            console.log('[NextAuth] Email OTP cleared');
+            if (isDev) console.log('[NextAuth] Email OTP cleared');
           }
         }
 
         // Update last login
-        console.log('[NextAuth] Updating last login timestamp');
+        if (isDev) console.log('[NextAuth] Updating last login timestamp');
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLogin: new Date() },
         });
 
         // Log the login action
-        console.log('[NextAuth] Creating activity log entry');
+        if (isDev) console.log('[NextAuth] Creating activity log entry');
         await prisma.activityLog.create({
           data: {
             userId: user.id,
@@ -142,7 +144,7 @@ export const authOptions: NextAuthOptions = {
           roleId: user.roleId,
         };
 
-        console.log('[NextAuth] Authorization successful, returning user:', {
+        if (isDev) console.log('[NextAuth] Authorization successful, returning user:', {
           id: userResult.id,
           email: userResult.email,
           name: userResult.name,
@@ -155,9 +157,11 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      console.log('[NextAuth] jwt() callback called');
+      const isDev = process.env.NODE_ENV === 'development';
+      
+      if (isDev) console.log('[NextAuth] jwt() callback called');
       if (user) {
-        console.log('[NextAuth] Adding user data to JWT token:', {
+        if (isDev) console.log('[NextAuth] Adding user data to JWT token:', {
           id: user.id,
           role: user.role,
           roleId: user.roleId,
@@ -165,7 +169,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.roleId = user.roleId;
-      } else {
+      } else if (isDev) {
         console.log('[NextAuth] JWT refresh - existing token:', {
           id: token.id,
           role: token.role,
@@ -175,8 +179,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      console.log('[NextAuth] session() callback called');
-      console.log('[NextAuth] Token data:', {
+      const isDev = process.env.NODE_ENV === 'development';
+      
+      if (isDev) console.log('[NextAuth] session() callback called');
+      if (isDev) console.log('[NextAuth] Token data:', {
         id: token.id,
         role: token.role,
         roleId: token.roleId,
@@ -185,7 +191,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.roleId = token.roleId as string;
-        console.log('[NextAuth] Session user populated:', {
+        if (isDev) console.log('[NextAuth] Session user populated:', {
           id: session.user.id,
           email: session.user.email,
           name: session.user.name,
