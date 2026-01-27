@@ -23,6 +23,15 @@ A comprehensive web-based administration panel for managing Minecraft SMP (Survi
 - **Password Hashing**: bcryptjs
 - **Console Management**: node-pty for tmux integration
 
+## 🌐 Base Path Configuration
+
+This application is configured to run under the `/apanel44` base path. This means:
+- All routes are prefixed with `/apanel44` (e.g., `https://v1rtopia.com/apanel44/`)
+- Static assets (_next/static/*) are served under `/apanel44/_next/static/`
+- The `basePath` is configured in `next.config.ts`
+
+For local development, access the app at `http://localhost:3000/apanel44`.
+
 ## 📁 Project Structure
 
 ```
@@ -92,6 +101,8 @@ smp-shard-admin-panel/
 
 6. **Open your browser**
    Navigate to [http://localhost:3000/apanel44](http://localhost:3000/apanel44) to see the dashboard.
+   
+   **Note**: The application is configured with `basePath: '/apanel44'`, so all routes must be accessed with this prefix.
 
 ## ⚙️ Configuration
 
@@ -118,6 +129,106 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ```bash
 openssl rand -base64 32
+```
+
+## 🔒 Authentication
+
+The panel supports two authentication methods:
+
+1. **Email OTP**: One-time password sent via email
+2. **Google Authenticator**: TOTP-based authentication using speakeasy
+
+Both methods can be configured per user for enhanced security.
+
+## 🚀 Production Deployment
+
+### Building for Production
+
+1. **Build the Next.js application**
+   ```bash
+   npm run build
+   ```
+
+2. **Start the production server**
+   ```bash
+   npm run start
+   ```
+   
+   The app will run on port 3000 by default. You can configure a different port using the `PORT` environment variable.
+
+### Nginx Configuration
+
+When deploying behind Nginx, configure it to proxy requests to the Next.js server. Here's a sample Nginx configuration:
+
+```nginx
+# Nginx configuration for SMP Shard Admin Panel
+# This config assumes Next.js is running on localhost:3000
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name v1rtopia.com;
+
+    # Redirect HTTP to HTTPS (if using SSL)
+    # return 301 https://$server_name$request_uri;
+    
+    # Admin panel location
+    location /apanel44/ {
+        # Proxy to Next.js server
+        proxy_pass http://localhost:3000/apanel44/;
+        proxy_http_version 1.1;
+        
+        # WebSocket support (if needed)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Don't cache responses
+        proxy_cache_bypass $http_upgrade;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # Static files for Next.js (_next/static/)
+    # These are automatically handled by the proxy_pass above,
+    # but you can add caching headers for better performance
+    location /apanel44/_next/static/ {
+        proxy_pass http://localhost:3000/apanel44/_next/static/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        
+        # Cache static files for 1 year
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+**Important Notes:**
+- Replace `localhost:3000` with your actual Next.js server address and port
+- Update `server_name` to match your domain
+- For HTTPS, add SSL certificate configuration
+- Ensure the `basePath` in `next.config.ts` matches the Nginx location (`/apanel44`)
+
+### Environment Variables for Production
+
+Update your `.env` file for production:
+
+```env
+# Production URL with basePath
+NEXTAUTH_URL="https://v1rtopia.com/apanel44"
+
+# Other environment variables...
+DATABASE_URL="mysql://user:password@localhost:3306/smp_admin_panel"
+SECRET="your-production-secret-here"
 ```
 
 ## 🔒 Authentication
