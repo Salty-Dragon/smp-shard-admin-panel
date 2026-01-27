@@ -102,7 +102,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
       if (response.ok) {
         setSuccess('2FA enabled successfully! 🎉');
         setTimeout(() => {
-          window.location.href = '/apanel44/dashboard';
+          window.location.href = '/dashboard';
         }, 2000);
       } else {
         const data = await response.json();
@@ -138,7 +138,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
               </div>
             </div>
             <Link
-              href="/apanel44/dashboard"
+              href="/dashboard"
               className="text-green-400 hover:text-green-300 font-semibold"
             >
               ← Back to Dashboard
@@ -327,7 +327,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || !session.user) {
     return {
       redirect: {
-        destination: '/apanel44/login',
+        destination: '/login',
         permanent: false,
       },
     };

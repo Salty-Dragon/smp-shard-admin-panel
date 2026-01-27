@@ -62,7 +62,7 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/apanel44/login' });
+    await signOut({ callbackUrl: '/login' });
   };
 
   const getActionIcon = (actionType: string) => {
@@ -132,14 +132,14 @@ export default function Dashboard({ user }: DashboardProps) {
           <div className="container mx-auto px-4">
             <div className="flex space-x-1">
               <Link
-                href="/apanel44/dashboard"
+                href="/dashboard"
                 className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
               >
                 📊 Dashboard
               </Link>
               {(user.role === 'Super Admin' || user.role === 'Admin') && (
                 <Link
-                  href="/apanel44/users"
+                  href="/users"
                   className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
                 >
                   👥 Users
@@ -147,7 +147,7 @@ export default function Dashboard({ user }: DashboardProps) {
               )}
               {user.role === 'Super Admin' && (
                 <Link
-                  href="/apanel44/roles"
+                  href="/roles"
                   className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
                 >
                   🛡️ Roles
@@ -155,14 +155,14 @@ export default function Dashboard({ user }: DashboardProps) {
               )}
               {(user.role === 'Super Admin' || user.role === 'Moderator') && (
                 <Link
-                  href="/apanel44/logs"
+                  href="/logs"
                   className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
                 >
                   📋 Logs
                 </Link>
               )}
               <Link
-                href="/apanel44/2fa-setup"
+                href="/2fa-setup"
                 className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
               >
                 🔐 2FA Setup
@@ -272,7 +272,7 @@ export default function Dashboard({ user }: DashboardProps) {
             {recentActivity.length > 0 && (
               <div className="mt-4 text-center">
                 <Link
-                  href="/apanel44/logs"
+                  href="/logs"
                   className="text-green-400 hover:text-green-300 font-semibold"
                 >
                   View All Logs →
@@ -292,7 +292,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || !session.user) {
     return {
       redirect: {
-        destination: '/apanel44/login',
+        destination: '/login',
         permanent: false,
       },
     };
