@@ -134,12 +134,31 @@ export const authOptions: NextAuthOptions = {
       options: {
         httpOnly: true,
         sameSite: 'lax',
-        path: '/',
+        path: '/apanel44',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/apanel44',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/apanel44',
         secure: process.env.NODE_ENV === 'production',
       },
     },
   },
+  basePath: '/apanel44/api/auth',
   secret: process.env.SECRET || 'dev-secret-change-in-production',
+  debug: process.env.NODE_ENV === 'development',
 };
 
 export default NextAuth(authOptions);
