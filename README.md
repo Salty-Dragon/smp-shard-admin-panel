@@ -30,7 +30,17 @@ This application is configured to run under the `/apanel44` base path. This mean
 - Static assets (_next/static/*) are served under `/apanel44/_next/static/`
 - The `basePath` is configured in `next.config.ts`
 
-For local development, access the app at `http://localhost:3000/apanel44`.
+For local development, access the app at `http://localhost:3000/apanel44/`.
+
+### Trailing Slash Configuration
+
+**Important**: This application uses `trailingSlash: true` in `next.config.ts` to ensure all URLs end with a trailing slash. This prevents redirect loops when deploying behind Nginx or other reverse proxies.
+
+**Why this matters:**
+- Next.js will automatically append trailing slashes to all routes
+- Nginx must be configured to match this behavior to avoid HTTP 308 redirect loops
+- Accessing `/apanel44` without a trailing slash will redirect to `/apanel44/`
+- All internal navigation will use trailing slashes (e.g., `/apanel44/dashboard/`)
 
 ## 📁 Project Structure
 
@@ -158,78 +168,126 @@ Both methods can be configured per user for enhanced security.
 
 ### Nginx Configuration
 
-When deploying behind Nginx, configure it to proxy requests to the Next.js server. Here's a sample Nginx configuration:
+When deploying behind Nginx, proper configuration is **critical** to prevent redirect loops. A complete configuration file is provided in `nginx.conf` at the root of this repository.
+
+**Key Configuration Points:**
+
+1. **Trailing Slash Handling**: The app uses `trailingSlash: true` in Next.js, so Nginx must redirect `/apanel44` to `/apanel44/`
+2. **Proxy Redirects**: Use `proxy_redirect off;` to let Next.js handle all routing
+3. **Static File Caching**: Configure appropriate cache headers for `_next/static/` files
+
+**Quick Setup:**
+
+```bash
+# Copy the provided configuration
+sudo cp nginx.conf /etc/nginx/sites-available/smp-admin-panel
+
+# Create symbolic link to enable the site
+sudo ln -s /etc/nginx/sites-available/smp-admin-panel /etc/nginx/sites-enabled/
+
+# Test the configuration
+sudo nginx -t
+
+# Reload Nginx
+sudo systemctl reload nginx
+```
+
+**Sample Configuration (see `nginx.conf` for complete configuration):**
 
 ```nginx
-# Nginx configuration for SMP Shard Admin Panel
-# This config assumes Next.js is running on localhost:3000
+# Critical: Redirect base path without trailing slash
+location = /apanel44 {
+    return 301 /apanel44/;
+}
 
-server {
-    listen 80;
-    listen [::]:80;
-    server_name v1rtopia.com;
+# Main application proxy
+location /apanel44/ {
+    proxy_pass http://localhost:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # CRITICAL: Disable nginx trailing slash redirects
+    # Let Next.js handle all routing
+    proxy_redirect off;
+}
 
-    # Redirect HTTP to HTTPS (if using SSL)
-    # return 301 https://$server_name$request_uri;
-    
-    # Admin panel location
-    location /apanel44/ {
-        # Proxy to Next.js server
-        proxy_pass http://localhost:3000/apanel44/;
-        proxy_http_version 1.1;
-        
-        # WebSocket support (if needed)
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        
-        # Standard proxy headers
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Don't cache responses
-        proxy_cache_bypass $http_upgrade;
-        
-        # Timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-    
-    # Static files for Next.js (_next/static/)
-    # These are automatically handled by the proxy_pass above,
-    # but you can add caching headers for better performance
-    location /apanel44/_next/static/ {
-        proxy_pass http://localhost:3000/apanel44/_next/static/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        
-        # Cache static files for 1 year
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
+# Static files with aggressive caching
+location /apanel44/_next/static/ {
+    proxy_pass http://localhost:3000;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+    proxy_redirect off;
 }
 ```
 
 **Important Notes:**
 - Replace `localhost:3000` with your actual Next.js server address and port
 - Update `server_name` to match your domain
-- For HTTPS, add SSL certificate configuration
+- For HTTPS, add SSL certificate configuration (see commented section in `nginx.conf`)
 - Ensure the `basePath` in `next.config.ts` matches the Nginx location (`/apanel44`)
+- **CRITICAL**: The `location = /apanel44` block redirects to `/apanel44/` with a trailing slash - this prevents redirect loops
+- **CRITICAL**: Use `proxy_redirect off;` to prevent Nginx from interfering with Next.js routing
+- See the complete `nginx.conf` file in the repository root for the full configuration
 
 ### Environment Variables for Production
 
 Update your `.env` file for production:
 
 ```env
-# Production URL with basePath
+# Production URL with basePath (note: use trailing slash)
 NEXTAUTH_URL="https://v1rtopia.com/apanel44"
 
 # Other environment variables...
 DATABASE_URL="mysql://user:password@localhost:3306/smp_admin_panel"
 SECRET="your-production-secret-here"
 ```
+
+### Deployment Checklist
+
+When deploying to production, follow these steps to avoid issues:
+
+1. **Update `next.config.ts`** ✓ Already configured with `trailingSlash: true`
+2. **Configure Nginx** using the provided `nginx.conf` file
+3. **Build the Next.js application**: `npm run build`
+4. **Start the production server**: `npm run start` (or use PM2/systemd)
+5. **Test Nginx configuration**: `sudo nginx -t`
+6. **Reload Nginx**: `sudo systemctl reload nginx`
+7. **Test the deployment**:
+   - Access `https://v1rtopia.com/apanel44` (should redirect to `/apanel44/`)
+   - Access `https://v1rtopia.com/apanel44/` (should load the app)
+   - Check browser console for any errors
+   - Verify static files load correctly (check Network tab)
+
+### Troubleshooting
+
+**Problem: "Too Many Redirects" (HTTP 308) error**
+
+This occurs when there's a conflict between Next.js and Nginx trailing slash handling.
+
+**Solution:**
+1. Ensure `trailingSlash: true` is set in `next.config.ts` ✓
+2. Ensure Nginx configuration includes:
+   - `location = /apanel44 { return 301 /apanel44/; }`
+   - `proxy_redirect off;` in all proxy_pass blocks
+3. Rebuild Next.js: `npm run build`
+4. Restart Next.js server and reload Nginx
+
+**Problem: Static files not loading**
+
+**Solution:**
+- Verify `location /apanel44/_next/static/` block exists in Nginx config
+- Check that `proxy_redirect off;` is set
+- Clear browser cache and test in incognito mode
+
+**Problem: 404 errors on sub-routes**
+
+**Solution:**
+- Ensure all routes in your app end with trailing slashes
+- Verify `basePath: '/apanel44'` is set in `next.config.ts`
+- Check Nginx logs: `sudo tail -f /var/log/nginx/error.log`
 
 ## 🔒 Authentication
 
