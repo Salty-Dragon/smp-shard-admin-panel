@@ -49,7 +49,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const fetchRecentActivity = async () => {
     try {
-      const response = await fetch('/apanel44/api/logs/recent?limit=10');
+      const response = await fetch('/api/logs/recent?limit=10');
       if (response.ok) {
         const data = await response.json();
         setRecentActivity(data.logs);

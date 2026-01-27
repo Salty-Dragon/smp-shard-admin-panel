@@ -57,13 +57,24 @@ export default function LogsPage({ user }: LogsPageProps) {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple password check (in production, this should be more secure)
-    if (password === 'logaccess123') {
-      setAuthenticated(true);
-      setPasswordError('');
-    } else {
-      setPasswordError('Invalid password');
-    }
+    // Verify password via API
+    fetch('/api/logs/verify-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+      .then(async (response) => {
+        if (response.ok) {
+          setAuthenticated(true);
+          setPasswordError('');
+        } else {
+          const data = await response.json();
+          setPasswordError(data.error || 'Invalid password');
+        }
+      })
+      .catch(() => {
+        setPasswordError('An error occurred');
+      });
   };
 
   const fetchLogs = async () => {
@@ -85,7 +96,7 @@ export default function LogsPage({ user }: LogsPageProps) {
         params.append('startDate', startDate.toISOString());
       }
 
-      const response = await fetch(`/apanel44/api/logs?${params.toString()}`);
+      const response = await fetch(`/api/logs?${params.toString()}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -173,10 +184,6 @@ export default function LogsPage({ user }: LogsPageProps) {
               >
                 ← Back to Dashboard
               </Link>
-            </div>
-
-            <div className="mt-4 text-center text-stone-500 text-xs">
-              Default password: logaccess123
             </div>
           </div>
         </div>

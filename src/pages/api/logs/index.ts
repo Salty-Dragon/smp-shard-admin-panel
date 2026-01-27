@@ -45,11 +45,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       if (startDate && typeof startDate === 'string') {
-        params.startDate = new Date(startDate);
+        const date = new Date(startDate);
+        if (!isNaN(date.getTime())) {
+          params.startDate = date;
+        }
       }
 
       if (endDate && typeof endDate === 'string') {
-        params.endDate = new Date(endDate);
+        const date = new Date(endDate);
+        if (!isNaN(date.getTime())) {
+          params.endDate = date;
+        }
       }
 
       const result = await getActivityLogs(params);

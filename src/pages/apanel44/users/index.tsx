@@ -60,7 +60,7 @@ export default function UsersPage({ user }: UsersPageProps) {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/apanel44/api/users');
+      const response = await fetch('/api/users');
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -74,7 +74,7 @@ export default function UsersPage({ user }: UsersPageProps) {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch('/apanel44/api/roles');
+      const response = await fetch('/api/roles');
       if (response.ok) {
         const data = await response.json();
         setRoles(data.roles);
@@ -90,7 +90,7 @@ export default function UsersPage({ user }: UsersPageProps) {
     setSuccess('');
 
     try {
-      const response = await fetch('/apanel44/api/users', {
+      const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -127,7 +127,7 @@ export default function UsersPage({ user }: UsersPageProps) {
         updateData.password = formData.password;
       }
 
-      const response = await fetch(`/apanel44/api/users/${editingUser.id}`, {
+      const response = await fetch(`/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),
@@ -151,7 +151,7 @@ export default function UsersPage({ user }: UsersPageProps) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`/apanel44/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
       });
 
