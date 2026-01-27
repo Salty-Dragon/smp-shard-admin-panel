@@ -47,7 +47,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
   const setupTOTP = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/setup-totp', {
+      const response = await fetch('/apanel44/api/auth/setup-totp', {
         method: 'POST',
       });
 
@@ -71,7 +71,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/request-otp', {
+      const response = await fetch('/apanel44/api/auth/request-otp', {
         method: 'POST',
       });
 
@@ -95,7 +95,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/enable-2fa', {
+      const response = await fetch('/apanel44/api/auth/enable-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ method, code }),
