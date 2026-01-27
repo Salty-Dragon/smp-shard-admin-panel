@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 
 interface TwoFactorSetupProps {
   user: {
@@ -22,6 +23,7 @@ interface TwoFactorSetupProps {
 
 export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [method, setMethod] = useState<'email' | 'totp' | null>(null);
   const [step, setStep] = useState<'select' | 'setup' | 'verify'>('select');
   const [qrCode, setQrCode] = useState('');
@@ -102,7 +104,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
       if (response.ok) {
         setSuccess('2FA enabled successfully! 🎉');
         setTimeout(() => {
-          window.location.href = '/apanel44/dashboard';
+          router.push('/dashboard');
         }, 2000);
       } else {
         const data = await response.json();
@@ -138,7 +140,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
               </div>
             </div>
             <Link
-              href="/apanel44/dashboard"
+              href="/dashboard"
               className="text-green-400 hover:text-green-300 font-semibold"
             >
               ← Back to Dashboard
@@ -327,7 +329,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || !session.user) {
     return {
       redirect: {
-        destination: '/apanel44/login',
+        destination: '/login',
         permanent: false,
       },
     };

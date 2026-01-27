@@ -23,7 +23,7 @@ export default function Home() {
             Minecraft Server Management System
           </p>
           <Link
-            href="/apanel44"
+            href="/dashboard"
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-colors"
           >
             Go to Dashboard →

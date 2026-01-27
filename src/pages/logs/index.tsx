@@ -179,7 +179,7 @@ export default function LogsPage({ user }: LogsPageProps) {
 
             <div className="mt-6 text-center">
               <Link
-                href="/apanel44/dashboard"
+                href="/dashboard"
                 className="text-green-400 hover:text-green-300 text-sm"
               >
                 ← Back to Dashboard
@@ -214,7 +214,7 @@ export default function LogsPage({ user }: LogsPageProps) {
               </div>
             </div>
             <Link
-              href="/apanel44/dashboard"
+              href="/dashboard"
               className="text-green-400 hover:text-green-300 font-semibold"
             >
               ← Back to Dashboard
@@ -355,7 +355,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session || !session.user) {
     return {
       redirect: {
-        destination: '/apanel44/login',
+        destination: '/login',
         permanent: false,
       },
     };
@@ -365,7 +365,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (session.user.role !== 'Super Admin' && session.user.role !== 'Moderator') {
     return {
       redirect: {
-        destination: '/apanel44/dashboard',
+        destination: '/dashboard',
         permanent: false,
       },
     };
