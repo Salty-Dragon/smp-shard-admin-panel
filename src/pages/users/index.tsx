@@ -332,6 +332,7 @@ export default function UsersPage({ user }: UsersPageProps) {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
                     required
+                    autoComplete="email"
                   />
                 </div>
                 <div>
@@ -402,6 +403,7 @@ export default function UsersPage({ user }: UsersPageProps) {
                     value={formData.email}
                     className="w-full bg-stone-900 border-2 border-stone-700 text-stone-500 px-4 py-2"
                     disabled
+                    autoComplete="email"
                   />
                   <p className="text-stone-500 text-xs mt-1">Email cannot be changed</p>
                 </div>

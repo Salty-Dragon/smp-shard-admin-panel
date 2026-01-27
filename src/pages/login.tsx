@@ -137,6 +137,7 @@ export default function Login() {
                       required
                       disabled={loading}
                       autoFocus
+                      autoComplete="one-time-code"
                     />
                     <p className="mt-2 text-stone-400 text-sm">
                       Enter the 6-digit code from your authenticator app or email
