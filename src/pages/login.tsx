@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import packageJson from '../../package.json';
 
 export default function Login() {
   const router = useRouter();
@@ -186,6 +187,9 @@ export default function Login() {
             <div className="mt-8 pt-6 border-t-2 border-stone-700 text-center">
               <p className="text-stone-500 text-xs">
                 🔐 Secured with 2FA Authentication
+              </p>
+              <p className="text-stone-600 text-xs mt-2">
+                v{packageJson.version}
               </p>
             </div>
           </div>
