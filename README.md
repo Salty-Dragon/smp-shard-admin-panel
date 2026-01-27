@@ -161,8 +161,8 @@ npx prisma studio
 
 ## 📖 Documentation
 
-- [Components README](./components/README.md) - Component usage and structure
-- [Library README](./lib/README.md) - Utility functions documentation
+- [Components README](./src/components/README.md) - Component usage and structure
+- [Library README](./src/lib/README.md) - Utility functions documentation
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [TailwindCSS Documentation](https://tailwindcss.com/docs)
