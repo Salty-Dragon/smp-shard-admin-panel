@@ -33,6 +33,8 @@ model User {
   
   // Relations
   activityLogs      ActivityLog[]
+  errorReports      ErrorReport[]
+  scheduledTasks    ScheduledTask[]
   
   @@index([roleId])
   @@index([email])
@@ -93,4 +95,106 @@ model ActivityLog {
   @@index([userId])
   @@index([timestamp])
   @@index([actionType])
+}
+
+// Error Report model for tracking and managing error reports
+model ErrorReport {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Report details
+  title         String
+  description   String   @db.Text
+  severity      String   // 'low', 'medium', 'high', 'critical'
+  status        String   @default("open") // 'open', 'in_progress', 'resolved', 'closed'
+  
+  // Optional metadata
+  page          String?  // Page/route where error occurred
+  stackTrace    String?  @db.Text
+  userAgent     String?  @db.Text
+  ipAddress     String?
+  
+  // Resolution
+  resolvedById  String?
+  resolvedAt    DateTime?
+  resolution    String?  @db.Text
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// Scheduled Task model for managing automated server actions
+model ScheduledTask {
+  id            String   @id @default(uuid())
+  userId        String   // User who created the task
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Task details
+  name          String
+  description   String?  @db.Text
+  taskType      String   // 'backup', 'cleanup', 'ban', 'unban', 'custom'
+  status        String   @default("active") // 'active', 'paused', 'completed', 'failed'
+  
+  // Schedule configuration
+  scheduleType  String   // 'once', 'recurring'
+  cronExpression String? // For recurring tasks
+  scheduledFor  DateTime? // For one-time tasks
+  lastRunAt     DateTime?
+  nextRunAt     DateTime?
+  
+  // Task configuration (JSON)
+  config        String?  @db.Text
+  
+  // Execution details
+  executionCount Int     @default(0)
+  lastResult    String?  @db.Text
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([nextRunAt])
+  @@index([taskType])
+}
+
+// Server Metrics model for storing historical monitoring data
+model ServerMetrics {
+  id                String   @id @default(uuid())
+  
+  // CPU Metrics
+  cpuUsage          Float    // Percentage
+  cpuCount          Int?     // Number of CPU cores
+  
+  // Memory Metrics
+  memoryTotal       Float    // Total memory in GB
+  memoryUsed        Float    // Used memory in GB
+  memoryUsagePercent Float   // Percentage
+  
+  // Database Metrics
+  dbConnections     Int?     // Current database connections
+  dbQueryTime       Float?   // Average query time in ms
+  dbStatus          String   @default("healthy") // 'healthy', 'degraded', 'down'
+  
+  // API Metrics
+  apiLatency        Float?   // Average API response time in ms
+  apiErrorRate      Float?   // Error rate percentage
+  apiRequestCount   Int?     // Number of requests in period
+  
+  // Additional metrics
+  uptime            Float?   // Server uptime in seconds
+  diskUsage         Float?   // Disk usage percentage
+  
+  // Timestamp
+  timestamp         DateTime @default(now())
+  
+  @@index([timestamp])
 }
