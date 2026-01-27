@@ -32,6 +32,23 @@ This application is configured to run under the `/apanel44` base path. This mean
 
 For local development, access the app at `http://localhost:3000/apanel44/`.
 
+### How basePath Works
+
+When you set `basePath: '/apanel44'` in `next.config.ts`:
+1. **Pages are NOT in a subdirectory**: Pages are in `/src/pages/`, not `/src/pages/apanel44/`
+2. **Next.js handles the prefix**: Next.js automatically adds `/apanel44` to all routes
+3. **Links should be relative**: Use `href="/dashboard"`, not `href="/apanel44/dashboard"`
+4. **Example mapping**:
+   - `/src/pages/index.tsx` → `https://example.com/apanel44/`
+   - `/src/pages/login.tsx` → `https://example.com/apanel44/login`
+   - `/src/pages/dashboard.tsx` → `https://example.com/apanel44/dashboard`
+
+**Common Mistakes to Avoid:**
+- ❌ Using `href="/apanel44/dashboard"` (causes double prefix: `/apanel44/apanel44/dashboard`)
+- ❌ Putting pages in `/pages/apanel44/` directory (also causes double prefix)
+- ✅ Use `href="/dashboard"` (Next.js adds the basePath automatically)
+- ✅ Keep pages in `/pages/` directory at root level
+
 ### Trailing Slash Configuration
 
 **Important**: This application uses `trailingSlash: true` in `next.config.ts` to ensure all URLs end with a trailing slash. This prevents redirect loops when deploying behind Nginx or other reverse proxies.
@@ -46,28 +63,37 @@ For local development, access the app at `http://localhost:3000/apanel44/`.
 
 ```
 smp-shard-admin-panel/
-├── pages/              # Next.js page-based routing
-│   ├── api/           # API routes
-│   ├── _app.tsx       # Custom App component
-│   ├── _document.tsx  # Custom Document component
-│   ├── index.tsx      # Home page
-│   └── apanel44.tsx   # Dashboard page
-├── components/        # Reusable React components
-│   ├── Button.tsx     # Example button component
-│   └── README.md      # Component documentation
-├── styles/           # Global styles and Tailwind config
-│   └── globals.css   # Global CSS with Tailwind
-├── lib/              # Helper functions and utilities
-│   ├── prisma.ts     # Prisma client singleton
-│   ├── email.ts      # Email utility functions
-│   ├── auth.ts       # 2FA authentication utilities
-│   ├── console.ts    # Server console management
-│   └── README.md     # Library documentation
-├── prisma/           # Prisma schema and migrations
-│   └── schema.prisma # Database schema
-├── public/           # Static assets
-└── .env.example      # Environment variable template
+├── src/
+│   ├── pages/              # Next.js page-based routing
+│   │   ├── api/           # API routes
+│   │   │   └── auth/      # NextAuth.js authentication API routes
+│   │   ├── _app.tsx       # Custom App component (SessionProvider)
+│   │   ├── _document.tsx  # Custom Document component
+│   │   ├── index.tsx      # Landing page (redirects to dashboard)
+│   │   ├── login.tsx      # Login page with 2FA support
+│   │   ├── dashboard.tsx  # Main dashboard page
+│   │   ├── 2fa-setup.tsx  # 2FA configuration page
+│   │   ├── users/         # User management pages
+│   │   └── logs/          # Activity log pages
+│   ├── components/        # Reusable React components
+│   │   └── README.md      # Component documentation
+│   ├── styles/           # Global styles and Tailwind config
+│   │   └── globals.css   # Global CSS with Tailwind
+│   ├── lib/              # Helper functions and utilities
+│   │   ├── prisma.ts     # Prisma client singleton
+│   │   ├── email.ts      # Email utility functions
+│   │   ├── auth.ts       # 2FA authentication utilities
+│   │   ├── console.ts    # Server console management
+│   │   └── README.md     # Library documentation
+│   └── types/            # TypeScript type definitions
+├── prisma/               # Prisma schema and migrations
+│   └── schema.prisma    # Database schema
+├── public/              # Static assets
+├── .env.example         # Environment variable template
+└── next.config.ts       # Next.js configuration (basePath, trailingSlash)
 ```
+
+**Important:** All pages are in `/src/pages/` (not `/src/pages/apanel44/`). The `basePath: '/apanel44'` in `next.config.ts` automatically prefixes all routes.
 
 ## 🛠️ Installation
 
@@ -332,6 +358,33 @@ This occurs when there's a conflict between Next.js and Nginx trailing slash han
 - Ensure all routes in your app end with trailing slashes
 - Verify `basePath: '/apanel44'` is set in `next.config.ts`
 - Check Nginx logs: `sudo tail -f /var/log/nginx/error.log`
+
+**Problem: Extra `/apanel44/apanel44` in URLs or Authentication Errors**
+
+This happens when the basePath is incorrectly applied twice.
+
+**Root Cause:**
+- Pages were in `/src/pages/apanel44/` directory AND `basePath: '/apanel44'` was set
+- Links used absolute paths like `href="/apanel44/dashboard"` instead of relative paths
+
+**Solution (Already Fixed):**
+- ✅ Pages moved to `/src/pages/` (root level, not in apanel44 subdirectory)
+- ✅ All links updated to use relative paths: `href="/dashboard"` instead of `href="/apanel44/dashboard"`
+- ✅ NextAuth `pages.signIn` and `pages.error` correctly set to `${BASE_PATH}/login`
+- ✅ All redirects in `getServerSideProps` updated to use relative paths
+
+**Problem: NextAuth API Routes Returning 404**
+
+**Symptoms:**
+- `/api/auth/session` returns 404
+- `/api/auth/providers` returns 404
+- Browser console shows: `Unexpected token '<', "<html>..." is not valid JSON`
+
+**Solution:**
+- Verify `/src/pages/api/auth/[...nextauth].ts` exists ✓
+- Verify `NEXTAUTH_URL` includes basePath: `http://localhost:3000/apanel44` ✓
+- Verify NextAuth cookie paths are set to `BASE_PATH` ✓
+- Check that `SessionProvider` is configured in `_app.tsx` ✓
 
 ## 🔒 Authentication
 
