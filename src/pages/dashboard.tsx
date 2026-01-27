@@ -317,7 +317,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   };
 
   // Get version from package.json
-  const packageJson = await import('../../package.json');
+  // Using require for compatibility with Next.js server-side rendering
+  const packageJson = require('../../package.json');
   const version = packageJson.version;
 
   return {
