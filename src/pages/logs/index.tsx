@@ -58,7 +58,7 @@ export default function LogsPage({ user }: LogsPageProps) {
     e.preventDefault();
     
     // Verify password via API
-    fetch('/api/logs/verify-password', {
+    fetch('/apanel44/api/logs/verify-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),

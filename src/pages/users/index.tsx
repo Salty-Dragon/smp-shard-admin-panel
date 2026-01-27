@@ -60,7 +60,7 @@ export default function UsersPage({ user }: UsersPageProps) {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch('/apanel44/api/users');
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -74,7 +74,7 @@ export default function UsersPage({ user }: UsersPageProps) {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch('/api/roles');
+      const response = await fetch('/apanel44/api/roles');
       if (response.ok) {
         const data = await response.json();
         setRoles(data.roles);
@@ -90,7 +90,7 @@ export default function UsersPage({ user }: UsersPageProps) {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/users', {
+      const response = await fetch('/apanel44/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
