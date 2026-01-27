@@ -25,27 +25,27 @@ A comprehensive web-based administration panel for managing Minecraft SMP (Survi
 
 ## 🌐 Base Path Configuration
 
-This application is configured to run under the `/apanel` base path. This means:
-- All routes are prefixed with `/apanel` (e.g., `https://v1rtopia.com/apanel/`)
-- Static assets (_next/static/*) are served under `/apanel/_next/static/`
+This application is configured to run under the `/apanel44` base path. This means:
+- All routes are prefixed with `/apanel44` (e.g., `https://v1rtopia.com/apanel44/`)
+- Static assets (_next/static/*) are served under `/apanel44/_next/static/`
 - The `basePath` is configured in `next.config.ts`
 
-For local development, access the app at `http://localhost:3000/apanel/`.
+For local development, access the app at `http://localhost:3000/apanel44/`.
 
 ### How basePath Works
 
-When you set `basePath: '/apanel'` in `next.config.ts`:
-1. **Pages are NOT in a subdirectory**: Pages are in `/src/pages/`, not `/src/pages/apanel/`
-2. **Next.js handles the prefix**: Next.js automatically adds `/apanel` to all routes
-3. **Links should be relative**: Use `href="/dashboard"`, not `href="/apanel/dashboard"`
+When you set `basePath: '/apanel44'` in `next.config.ts`:
+1. **Pages are NOT in a subdirectory**: Pages are in `/src/pages/`, not `/src/pages/apanel44/`
+2. **Next.js handles the prefix**: Next.js automatically adds `/apanel44` to all routes
+3. **Links should be relative**: Use `href="/dashboard"`, not `href="/apanel44/dashboard"`
 4. **Example mapping**:
-   - `/src/pages/index.tsx` → `https://example.com/apanel/`
-   - `/src/pages/login.tsx` → `https://example.com/apanel/login`
-   - `/src/pages/dashboard.tsx` → `https://example.com/apanel/dashboard`
+   - `/src/pages/index.tsx` → `https://example.com/apanel44/`
+   - `/src/pages/login.tsx` → `https://example.com/apanel44/login`
+   - `/src/pages/dashboard.tsx` → `https://example.com/apanel44/dashboard`
 
 **Common Mistakes to Avoid:**
-- ❌ Using `href="/apanel/dashboard"` (causes double prefix: `/apanel/apanel/dashboard`)
-- ❌ Putting pages in `/pages/apanel/` directory (also causes double prefix)
+- ❌ Using `href="/apanel44/dashboard"` (causes double prefix: `/apanel44/apanel/dashboard`)
+- ❌ Putting pages in `/pages/apanel44/` directory (also causes double prefix)
 - ✅ Use `href="/dashboard"` (Next.js adds the basePath automatically)
 - ✅ Keep pages in `/pages/` directory at root level
 
@@ -56,8 +56,8 @@ When you set `basePath: '/apanel'` in `next.config.ts`:
 **Why this matters:**
 - Next.js will automatically append trailing slashes to all routes
 - Nginx must be configured to match this behavior to avoid HTTP 308 redirect loops
-- Accessing `/apanel` without a trailing slash will redirect to `/apanel/`
-- All internal navigation will use trailing slashes (e.g., `/apanel/dashboard/`)
+- Accessing `/apanel44` without a trailing slash will redirect to `/apanel44/`
+- All internal navigation will use trailing slashes (e.g., `/apanel44/dashboard/`)
 
 ## 📁 Project Structure
 
@@ -93,7 +93,7 @@ smp-shard-admin-panel/
 └── next.config.ts       # Next.js configuration (basePath, trailingSlash)
 ```
 
-**Important:** All pages are in `/src/pages/` (not `/src/pages/apanel/`). The `basePath: '/apanel'` in `next.config.ts` automatically prefixes all routes.
+**Important:** All pages are in `/src/pages/` (not `/src/pages/apanel44/`). The `basePath: '/apanel44'` in `next.config.ts` automatically prefixes all routes.
 
 ## 🛠️ Installation
 
@@ -136,9 +136,9 @@ smp-shard-admin-panel/
    ```
 
 6. **Open your browser**
-   Navigate to [http://localhost:3000/apanel](http://localhost:3000/apanel) to see the dashboard.
+   Navigate to [http://localhost:3000/apanel44](http://localhost:3000/apanel44) to see the dashboard.
    
-   **Note**: The application is configured with `basePath: '/apanel'`, so all routes must be accessed with this prefix.
+   **Note**: The application is configured with `basePath: '/apanel44'`, so all routes must be accessed with this prefix.
 
 ## ⚙️ Configuration
 
@@ -158,18 +158,18 @@ SMTP_PASS="your-smtp-password"
 
 # NextAuth.js - Session encryption and URL
 SECRET="generate-a-random-secure-string"
-# IMPORTANT: Include the basePath (/apanel) in the URL
-NEXTAUTH_URL="http://localhost:3000/apanel"
+# IMPORTANT: Include the basePath (/apanel44) in the URL
+NEXTAUTH_URL="http://localhost:3000/apanel44"
 
 # Development mode (enables debug logging)
 NODE_ENV="development"
 ```
 
 **Important Notes:**
-- The `NEXTAUTH_URL` **must** include the `/apanel` basePath for authentication to work correctly
-- In production, set `NEXTAUTH_URL` to your domain with the basePath (e.g., `https://v1rtopia.com/apanel`)
-- All authentication cookies are scoped to the `/apanel` path
-- Authentication errors will redirect to `/apanel/login` (not `/api/auth/error`)
+- The `NEXTAUTH_URL` **must** include the `/apanel44` basePath for authentication to work correctly
+- In production, set `NEXTAUTH_URL` to your domain with the basePath (e.g., `https://v1rtopia.com/apanel44`)
+- All authentication cookies are scoped to the `/apanel44` path
+- Authentication errors will redirect to `/apanel44/login` (not `/api/auth/error`)
 
 ### Generate a secure SECRET
 
@@ -189,13 +189,13 @@ Both methods can be configured per user for enhanced security.
 ### Authentication Flow & Error Handling
 
 **Login Process:**
-1. User enters email and password at `/apanel/login`
+1. User enters email and password at `/apanel44/login`
 2. If 2FA is enabled, user is prompted for a 2FA code
-3. On success, user is redirected to `/apanel/dashboard`
+3. On success, user is redirected to `/apanel44/dashboard`
 4. On error, user sees an error message on the login page (no external redirect)
 
 **Cookie Configuration:**
-- All NextAuth cookies are scoped to `/apanel` path
+- All NextAuth cookies are scoped to `/apanel44` path
 - Cookies: `next-auth.session-token`, `next-auth.callback-url`, `next-auth.csrf-token`
 - In production, cookies are set with `secure: true` flag
 
@@ -203,7 +203,7 @@ Both methods can be configured per user for enhanced security.
 - Set `NODE_ENV=development` in `.env` to enable NextAuth debug logging
 - Check browser console for client-side errors
 - Check server console for authentication errors (e.g., invalid credentials, 2FA failures)
-- Verify `NEXTAUTH_URL` includes the `/apanel` basePath
+- Verify `NEXTAUTH_URL` includes the `/apanel44` basePath
 
 ## 🚀 Production Deployment
 
@@ -227,7 +227,7 @@ When deploying behind Nginx, proper configuration is **critical** to prevent red
 
 **Key Configuration Points:**
 
-1. **Trailing Slash Handling**: The app uses `trailingSlash: true` in Next.js, so Nginx must redirect `/apanel` to `/apanel/`
+1. **Trailing Slash Handling**: The app uses `trailingSlash: true` in Next.js, so Nginx must redirect `/apanel44` to `/apanel44/`
 2. **Proxy Redirects**: Use `proxy_redirect off;` to let Next.js handle all routing
 3. **Static File Caching**: Configure appropriate cache headers for `_next/static/` files
 
@@ -251,12 +251,12 @@ sudo systemctl reload nginx
 
 ```nginx
 # Critical: Redirect base path without trailing slash
-location = /apanel {
-    return 301 /apanel/;
+location = /apanel44 {
+    return 301 /apanel44/;
 }
 
 # Main application proxy
-location /apanel/ {
+location /apanel44/ {
     proxy_pass http://localhost:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -270,7 +270,7 @@ location /apanel/ {
 }
 
 # Static files with aggressive caching
-location /apanel/_next/static/ {
+location /apanel44/_next/static/ {
     proxy_pass http://localhost:3000;
     expires 1y;
     add_header Cache-Control "public, immutable";
@@ -282,8 +282,8 @@ location /apanel/_next/static/ {
 - Replace `localhost:3000` with your actual Next.js server address and port
 - Update `server_name` to match your domain
 - For HTTPS, add SSL certificate configuration (see commented section in `nginx.conf`)
-- Ensure the `basePath` in `next.config.ts` matches the Nginx location (`/apanel`)
-- **CRITICAL**: The `location = /apanel` block redirects to `/apanel/` with a trailing slash - this prevents redirect loops
+- Ensure the `basePath` in `next.config.ts` matches the Nginx location (`/apanel44`)
+- **CRITICAL**: The `location = /apanel44` block redirects to `/apanel44/` with a trailing slash - this prevents redirect loops
 - **CRITICAL**: Use `proxy_redirect off;` to prevent Nginx from interfering with Next.js routing
 - See the complete `nginx.conf` file in the repository root for the full configuration
 
@@ -293,8 +293,8 @@ Update your `.env` file for production:
 
 ```env
 # Production URL with basePath
-# IMPORTANT: Include the /apanel basePath in the URL for authentication to work
-NEXTAUTH_URL="https://v1rtopia.com/apanel"
+# IMPORTANT: Include the /apanel44 basePath in the URL for authentication to work
+NEXTAUTH_URL="https://v1rtopia.com/apanel44"
 
 # Use production mode to disable debug logging
 NODE_ENV="production"
@@ -310,7 +310,7 @@ LOG_ACCESS_PASSWORD="strong-password-here"
 ```
 
 **Critical for Authentication:**
-- `NEXTAUTH_URL` must include the `/apanel` basePath
+- `NEXTAUTH_URL` must include the `/apanel44` basePath
 - Without this, authentication will fail and redirect to non-existent error pages
 - Trailing slash is optional but should match your Nginx configuration
 
@@ -326,8 +326,8 @@ When deploying to production, follow these steps to avoid issues:
 6. **Test Nginx configuration**: `sudo nginx -t`
 6. **Reload Nginx**: `sudo systemctl reload nginx`
 7. **Test the deployment**:
-   - Access `https://v1rtopia.com/apanel` (should redirect to `/apanel/`)
-   - Access `https://v1rtopia.com/apanel/` (should load the app)
+   - Access `https://v1rtopia.com/apanel44` (should redirect to `/apanel44/`)
+   - Access `https://v1rtopia.com/apanel44/` (should load the app)
    - Check browser console for any errors
    - Verify static files load correctly (check Network tab)
 
@@ -340,7 +340,7 @@ This occurs when there's a conflict between Next.js and Nginx trailing slash han
 **Solution:**
 1. Ensure `trailingSlash: true` is set in `next.config.ts` ✓
 2. Ensure Nginx configuration includes:
-   - `location = /apanel { return 301 /apanel/; }`
+   - `location = /apanel44 { return 301 /apanel44/; }`
    - `proxy_redirect off;` in all proxy_pass blocks
 3. Rebuild Next.js: `npm run build`
 4. Restart Next.js server and reload Nginx
@@ -348,7 +348,7 @@ This occurs when there's a conflict between Next.js and Nginx trailing slash han
 **Problem: Static files not loading**
 
 **Solution:**
-- Verify `location /apanel/_next/static/` block exists in Nginx config
+- Verify `location /apanel44/_next/static/` block exists in Nginx config
 - Check that `proxy_redirect off;` is set
 - Clear browser cache and test in incognito mode
 
@@ -356,20 +356,20 @@ This occurs when there's a conflict between Next.js and Nginx trailing slash han
 
 **Solution:**
 - Ensure all routes in your app end with trailing slashes
-- Verify `basePath: '/apanel'` is set in `next.config.ts`
+- Verify `basePath: '/apanel44'` is set in `next.config.ts`
 - Check Nginx logs: `sudo tail -f /var/log/nginx/error.log`
 
-**Problem: Extra `/apanel/apanel` in URLs or Authentication Errors**
+**Problem: Extra `/apanel44/apanel44` in URLs or Authentication Errors**
 
 This happens when the basePath is incorrectly applied twice.
 
 **Root Cause:**
-- Pages were in `/src/pages/apanel/` directory AND `basePath: '/apanel'` was set
-- Links used absolute paths like `href="/apanel/dashboard"` instead of relative paths
+- Pages were in `/src/pages/apanel44/` directory AND `basePath: '/apanel44'` was set
+- Links used absolute paths like `href="/apanel44/dashboard"` instead of relative paths
 
 **Solution (Already Fixed):**
 - ✅ Pages moved to `/src/pages/` (root level, not in apanel subdirectory)
-- ✅ All links updated to use relative paths: `href="/dashboard"` instead of `href="/apanel/dashboard"`
+- ✅ All links updated to use relative paths: `href="/dashboard"` instead of `href="/apanel44/dashboard"`
 - ✅ NextAuth `pages.signIn` and `pages.error` correctly set to `${BASE_PATH}/login`
 - ✅ All redirects in `getServerSideProps` updated to use relative paths
 
@@ -382,7 +382,7 @@ This happens when the basePath is incorrectly applied twice.
 
 **Solution:**
 - Verify `/src/pages/api/auth/[...nextauth].ts` exists ✓
-- Verify `NEXTAUTH_URL` includes basePath: `http://localhost:3000/apanel` ✓
+- Verify `NEXTAUTH_URL` includes basePath: `http://localhost:3000/apanel44` ✓
 - Verify NextAuth cookie paths are set to `BASE_PATH` ✓
 - Check that `SessionProvider` is configured in `_app.tsx` ✓
 
@@ -391,39 +391,39 @@ This happens when the basePath is incorrectly applied twice.
 **Problem: Session Not Persisting (Empty `{}` from `/api/auth/session`)**
 
 **Symptoms:**
-- Visiting `/apanel/api/auth/session` returns `{}`
+- Visiting `/apanel44/api/auth/session` returns `{}`
 - User is redirected back to login page after successful login
 - Sessions are not being created or recognized
 
 **Possible Causes & Solutions:**
 
 1. **Missing or Incorrect `SECRET` Environment Variable**
-   - Check if `SECRET` is set: Visit `/apanel/api/debug/env` (in development mode)
+   - Check if `SECRET` is set: Visit `/apanel44/api/debug/env` (in development mode)
    - Generate a new secret: `openssl rand -base64 32`
    - Add to `.env`: `SECRET="your-generated-secret-here"`
    - Restart the application after updating `.env`
 
 2. **Incorrect `NEXTAUTH_URL`**
-   - **CRITICAL**: `NEXTAUTH_URL` must include the basePath `/apanel`
-   - Correct: `NEXTAUTH_URL="http://localhost:3000/apanel"`
+   - **CRITICAL**: `NEXTAUTH_URL` must include the basePath `/apanel44`
+   - Correct: `NEXTAUTH_URL="http://localhost:3000/apanel44"`
    - Incorrect: `NEXTAUTH_URL="http://localhost:3000"`
-   - For production: `NEXTAUTH_URL="https://v1rtopia.com/apanel"`
+   - For production: `NEXTAUTH_URL="https://v1rtopia.com/apanel44"`
 
 3. **Cookie Path Mismatch**
-   - All NextAuth cookies are scoped to `/apanel` path
-   - If accessing the app without `/apanel` prefix, cookies won't work
-   - Always access: `http://localhost:3000/apanel/` (with trailing slash)
+   - All NextAuth cookies are scoped to `/apanel44` path
+   - If accessing the app without `/apanel44` prefix, cookies won't work
+   - Always access: `http://localhost:3000/apanel44/` (with trailing slash)
 
 4. **Cross-Origin Issues**
    - Ensure you're accessing the app from the same origin as `NEXTAUTH_URL`
-   - Example: If `NEXTAUTH_URL="https://v1rtopia.com/apanel"`, don't access via IP address
+   - Example: If `NEXTAUTH_URL="https://v1rtopia.com/apanel44"`, don't access via IP address
    - Check browser DevTools > Application > Cookies to verify cookies are being set
 
 **Problem: Login Redirects Back to Login Page**
 
 **Symptoms:**
 - Enter credentials, click Login
-- Page redirects back to `/apanel/login` without error message
+- Page redirects back to `/apanel44/login` without error message
 - Session is not created
 
 **Debugging Steps:**
@@ -454,7 +454,7 @@ This happens when the basePath is incorrectly applied twice.
      - `[NextAuth] Invalid 2FA code` - Wrong 2FA code
 
 4. **Verify Environment Variables**
-   - Visit `/apanel/api/debug/env` (development only)
+   - Visit `/apanel44/api/debug/env` (development only)
    - Check that `NEXTAUTH_URL` and `SECRET` are properly set
    - Ensure `DATABASE_URL` shows as `***SET***`
 
@@ -466,25 +466,25 @@ This happens when the basePath is incorrectly applied twice.
 
 **Solution:**
 - This has been fixed in the NextAuth configuration
-- Errors now redirect to `/apanel/login` instead
+- Errors now redirect to `/apanel44/login` instead
 - Error messages are displayed on the login page itself
 
 **Problem: Login Successful but Redirected to Wrong Page**
 
 **Symptoms:**
-- Login succeeds but redirected to `/dashboard` instead of `/apanel/dashboard`
+- Login succeeds but redirected to `/dashboard` instead of `/apanel44/dashboard`
 - Results in 404 error
 
 **Solution:**
 - This has been fixed in the login page
-- After successful login, user is redirected to `/apanel/dashboard`
+- After successful login, user is redirected to `/apanel44/dashboard`
 - All internal navigation uses basePath-aware routes
 
 **Debug Endpoints (Development Only)**
 
 For troubleshooting authentication issues, use these debug endpoints:
 
-1. **Check Environment Variables**: `/apanel/api/debug/env`
+1. **Check Environment Variables**: `/apanel44/api/debug/env`
    - Shows which environment variables are set (values masked)
    - Verifies `NEXTAUTH_URL` and `SECRET` configuration
    - **Access Control:**
@@ -496,15 +496,15 @@ For troubleshooting authentication issues, use these debug endpoints:
        DEBUG_TOKEN="your-secret-debug-token-here"
        
        # Access the endpoint with the token
-       curl -H "X-Debug-Token: your-secret-debug-token-here" https://v1rtopia.com/apanel/api/debug/env
+       curl -H "X-Debug-Token: your-secret-debug-token-here" https://v1rtopia.com/apanel44/api/debug/env
        ```
    - **Security Note:** Set a strong `DEBUG_TOKEN` in production and keep it secret
 
-2. **Check Session**: `/apanel/api/auth/session`
+2. **Check Session**: `/apanel44/api/auth/session`
    - Returns current session object (empty `{}` if not logged in)
    - After successful login, should return user object with email, name, role
 
-3. **Check Providers**: `/apanel/api/auth/providers`
+3. **Check Providers**: `/apanel44/api/auth/providers`
    - Lists available authentication providers
    - Should show "Credentials" provider
 

@@ -9,7 +9,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 
 // Base path for the application - must match next.config.ts basePath
-const BASE_PATH = '/apanel';
+const BASE_PATH = '/apanel44';
 
 export const authOptions: NextAuthOptions = {
   providers: [
