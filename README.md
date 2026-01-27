@@ -386,6 +386,140 @@ This happens when the basePath is incorrectly applied twice.
 - Verify NextAuth cookie paths are set to `BASE_PATH` ✓
 - Check that `SessionProvider` is configured in `_app.tsx` ✓
 
+### Authentication & Session Issues
+
+**Problem: Session Not Persisting (Empty `{}` from `/api/auth/session`)**
+
+**Symptoms:**
+- Visiting `/apanel44/api/auth/session` returns `{}`
+- User is redirected back to login page after successful login
+- Sessions are not being created or recognized
+
+**Possible Causes & Solutions:**
+
+1. **Missing or Incorrect `SECRET` Environment Variable**
+   - Check if `SECRET` is set: Visit `/apanel44/api/debug/env` (in development mode)
+   - Generate a new secret: `openssl rand -base64 32`
+   - Add to `.env`: `SECRET="your-generated-secret-here"`
+   - Restart the application after updating `.env`
+
+2. **Incorrect `NEXTAUTH_URL`**
+   - **CRITICAL**: `NEXTAUTH_URL` must include the basePath `/apanel44`
+   - Correct: `NEXTAUTH_URL="http://localhost:3000/apanel44"`
+   - Incorrect: `NEXTAUTH_URL="http://localhost:3000"`
+   - For production: `NEXTAUTH_URL="https://v1rtopia.com/apanel44"`
+
+3. **Cookie Path Mismatch**
+   - All NextAuth cookies are scoped to `/apanel44` path
+   - If accessing the app without `/apanel44` prefix, cookies won't work
+   - Always access: `http://localhost:3000/apanel44/` (with trailing slash)
+
+4. **Cross-Origin Issues**
+   - Ensure you're accessing the app from the same origin as `NEXTAUTH_URL`
+   - Example: If `NEXTAUTH_URL="https://v1rtopia.com/apanel44"`, don't access via IP address
+   - Check browser DevTools > Application > Cookies to verify cookies are being set
+
+**Problem: Login Redirects Back to Login Page**
+
+**Symptoms:**
+- Enter credentials, click Login
+- Page redirects back to `/apanel44/login` without error message
+- Session is not created
+
+**Debugging Steps:**
+
+1. **Enable Debug Logging**
+   - Set `NODE_ENV=development` in `.env`
+   - Check server console for detailed authentication logs:
+     ```
+     [NextAuth] authorize() called
+     [NextAuth] Credentials received: { email: 'admin@...', password: '***', ... }
+     [NextAuth] User found: { id: '...', email: '...', role: '...' }
+     [NextAuth] Password verified successfully
+     [NextAuth] Authorization successful
+     [NextAuth] jwt() callback called
+     [NextAuth] session() callback called
+     ```
+
+2. **Check Database Connection**
+   - Verify `DATABASE_URL` is correct in `.env`
+   - Test database access: `npx prisma studio`
+   - Ensure users exist in the database
+
+3. **Check for Authorization Errors**
+   - Look for error messages in server console:
+     - `[NextAuth] User not found: ...` - Invalid email
+     - `[NextAuth] Invalid password for user: ...` - Wrong password
+     - `[NextAuth] 2FA code required but not provided` - Missing 2FA code
+     - `[NextAuth] Invalid 2FA code` - Wrong 2FA code
+
+4. **Verify Environment Variables**
+   - Visit `/apanel44/api/debug/env` (development only)
+   - Check that `NEXTAUTH_URL` and `SECRET` are properly set
+   - Ensure `DATABASE_URL` shows as `***SET***`
+
+**Problem: 404 on `/api/auth/error`**
+
+**Symptoms:**
+- Login fails and tries to redirect to `/api/auth/error` (without basePath)
+- Gets 404 error
+
+**Solution:**
+- This has been fixed in the NextAuth configuration
+- Errors now redirect to `/apanel44/login` instead
+- Error messages are displayed on the login page itself
+
+**Problem: Login Successful but Redirected to Wrong Page**
+
+**Symptoms:**
+- Login succeeds but redirected to `/dashboard` instead of `/apanel44/dashboard`
+- Results in 404 error
+
+**Solution:**
+- This has been fixed in the login page
+- After successful login, user is redirected to `/apanel44/dashboard`
+- All internal navigation uses basePath-aware routes
+
+**Debug Endpoints (Development Only)**
+
+For troubleshooting authentication issues, use these debug endpoints:
+
+1. **Check Environment Variables**: `/apanel44/api/debug/env`
+   - Shows which environment variables are set (values masked)
+   - Verifies `NEXTAUTH_URL` and `SECRET` configuration
+   - Only accessible in development mode or with `X-Debug-Token` header
+
+2. **Check Session**: `/apanel44/api/auth/session`
+   - Returns current session object (empty `{}` if not logged in)
+   - After successful login, should return user object with email, name, role
+
+3. **Check Providers**: `/apanel44/api/auth/providers`
+   - Lists available authentication providers
+   - Should show "Credentials" provider
+
+**Authentication Flow Logging**
+
+When `NODE_ENV=development`, the server logs detailed information about the authentication flow:
+
+```
+[NextAuth] authorize() called
+[NextAuth] Credentials received: { email: 'admin@...', password: '***', twoFactorCode: 'NOT_PROVIDED' }
+[NextAuth] Looking up user: admin@...
+[NextAuth] User found: { id: '...', email: '...', name: '...', role: '...', twoFactorEnabled: false }
+[NextAuth] Verifying password...
+[NextAuth] Password verified successfully
+[NextAuth] Updating last login timestamp
+[NextAuth] Creating activity log entry
+[NextAuth] Authorization successful, returning user: { id: '...', email: '...', name: '...', role: '...' }
+[NextAuth] jwt() callback called
+[NextAuth] Adding user data to JWT token: { id: '...', role: '...', roleId: '...' }
+[NextAuth] session() callback called
+[NextAuth] Token data: { id: '...', role: '...', roleId: '...' }
+[NextAuth] Session user populated: { id: '...', email: '...', name: '...', role: '...' }
+```
+
+Use these logs to identify where the authentication process fails.
+
 ## 🔒 Authentication
 
 The panel supports two authentication methods:

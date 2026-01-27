@@ -38,7 +38,7 @@ export default function Login() {
           setError(result.error);
         }
       } else if (result?.ok) {
-        router.push('/apanel44/dashboard');
+        router.push('/dashboard');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
