@@ -237,8 +237,8 @@ location /apanel44/_next/static/ {
 Update your `.env` file for production:
 
 ```env
-# Production URL with basePath (note: use trailing slash)
-NEXTAUTH_URL="https://v1rtopia.com/apanel44"
+# Production URL with basePath (note: includes trailing slash for consistency)
+NEXTAUTH_URL="https://v1rtopia.com/apanel44/"
 
 # Other environment variables...
 DATABASE_URL="mysql://user:password@localhost:3306/smp_admin_panel"
