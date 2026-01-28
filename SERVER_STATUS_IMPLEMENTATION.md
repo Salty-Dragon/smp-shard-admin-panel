@@ -119,7 +119,7 @@ Use the session name (before the colon) in your `.env` file.
 
 ## API Endpoints
 
-### GET `/api/monitoring/server-status`
+### GET `/apanel44/api/monitoring/server-status`
 
 Fetches current Minecraft server status and player count.
 
@@ -145,7 +145,7 @@ console.log('Server is', data.status.online ? 'online' : 'offline');
 console.log('Players:', data.status.playerCount);
 ```
 
-### GET `/api/monitoring/metrics`
+### GET `/apanel44/api/monitoring/metrics`
 
 Enhanced with better logging and player count integration.
 

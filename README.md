@@ -542,10 +542,12 @@ Both methods can be configured per user for enhanced security.
 
 ## 📚 API Routes
 
-- `GET /api/health` - Health check endpoint
-- `GET /api/monitoring/metrics` - Server metrics (CPU, memory, player count)
-- `GET /api/monitoring/server-status` - Minecraft server status and player count
-- `GET /api/monitoring/history` - Historical metrics data
+All API routes are prefixed with `/apanel44` (the application's basePath):
+
+- `GET /apanel44/api/health` - Health check endpoint
+- `GET /apanel44/api/monitoring/metrics` - Server metrics (CPU, memory, player count)
+- `GET /apanel44/api/monitoring/server-status` - Minecraft server status and player count
+- `GET /apanel44/api/monitoring/history` - Historical metrics data
 - More API routes documented in component README files
 
 ## 🎮 Minecraft Server Integration

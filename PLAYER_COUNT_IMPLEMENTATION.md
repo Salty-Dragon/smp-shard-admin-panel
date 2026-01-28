@@ -170,7 +170,7 @@ Added Recharts library for data visualization:
 1. **Enabling Historical Data Collection**:
    - Call metrics endpoint with `?saveHistory=true` parameter
    - Set up cron job or scheduled task to save metrics periodically
-   - Example: `GET /api/monitoring/metrics?saveHistory=true`
+   - Example: `GET /apanel44/api/monitoring/metrics?saveHistory=true`
 
 2. **Integrating Real Player Count**:
    - Update `src/lib/minecraft.ts` functions
