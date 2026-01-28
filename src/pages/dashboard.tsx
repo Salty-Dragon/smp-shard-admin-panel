@@ -59,6 +59,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
   const [errorReports, setErrorReports] = useState<ErrorReport[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
   const [serverOnline, setServerOnline] = useState<boolean | null>(null); // null = checking, true = online, false = offline
+  const [serverStatusError, setServerStatusError] = useState<boolean>(false); // true = API error, false = no error
   const [loading, setLoading] = useState(true);
   const [showErrorReportModal, setShowErrorReportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -105,17 +106,22 @@ export default function Dashboard({ user, version }: DashboardProps) {
         if (data.status) {
           setServerOnline(data.status.online);
           setPlayerCount(data.status.playerCount);
+          setServerStatusError(false); // API call successful
         }
       } else {
-        // If API fails, assume server is offline
-        setServerOnline(false);
-        setPlayerCount(0);
+        // API returned an error status code
+        console.error('Server status API returned error:', response.status);
+        setServerStatusError(true);
+        // Keep previous values if we had them
       }
     } catch (error) {
+      // Network error or API unavailable
       console.error('Error fetching server status:', error);
-      // On error, assume server is offline
-      setServerOnline(false);
-      setPlayerCount(0);
+      setServerStatusError(true);
+      // Keep previous values if we had them, or show as checking
+      if (serverOnline === null) {
+        setServerOnline(null); // Still checking
+      }
     }
   };
 
@@ -315,13 +321,17 @@ export default function Dashboard({ user, version }: DashboardProps) {
                 </div>
                 <div className="bg-stone-900 border-2 border-stone-700 p-4 text-center">
                   <div className={`text-3xl font-bold ${
+                    serverStatusError ? 'text-yellow-400' :
                     serverOnline === null ? 'text-stone-400' : 
                     serverOnline ? 'text-green-400' : 'text-red-400'
                   }`}>
-                    {serverOnline === null ? 'Checking...' : 
+                    {serverStatusError ? 'Error' :
+                     serverOnline === null ? 'Checking...' : 
                      serverOnline ? 'Online' : 'Offline'}
                   </div>
-                  <div className="text-stone-400 text-sm mt-1">Server Status</div>
+                  <div className="text-stone-400 text-sm mt-1">
+                    {serverStatusError ? 'Unable to check' : 'Server Status'}
+                  </div>
                 </div>
                 {user.role === 'Super Admin' && (
                   <>

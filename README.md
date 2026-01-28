@@ -589,8 +589,6 @@ For detailed information, see [SERVER_STATUS_IMPLEMENTATION.md](./SERVER_STATUS_
 - Increase timeout in `src/lib/minecraft.ts` if server is slow to respond
 - Review logs for parsing errors: `[Minecraft] Raw output received...`
 
-## 📚 API Routes
-
 ## 🧪 Development
 
 ### Available Scripts

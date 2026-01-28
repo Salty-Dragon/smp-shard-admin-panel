@@ -204,14 +204,28 @@ export async function getServerStatus(serverName: string = process.env.MINECRAFT
       };
     }
     
-    console.log(`[Minecraft] Server session exists. Fetching player count...`);
+    console.log(`[Minecraft] Server session exists. Verifying server is responsive...`);
     
-    // Get player count - this also verifies the server is responsive
-    const playerCount = await getPlayerCount(serverName);
+    // Try to get player count - this verifies the server is actually responsive
+    // Send the list command and see if we get output
+    const output = await sendCommandAndCapture(serverName, 'list', 1500);
     
-    // If we successfully got player count, server is online
-    // Note: Even 0 players means server is running
-    console.log(`[Minecraft] Server is ONLINE with ${playerCount} players`);
+    // If we got no output, the server process might be frozen or starting
+    if (!output) {
+      console.log(`[Minecraft] Server session exists but not responsive. Server may be starting or frozen.`);
+      return {
+        online: false,
+        playerCount: 0,
+        maxPlayers: 0,
+        version: 'Unknown',
+      };
+    }
+    
+    // Parse the player count from the output
+    const playerCount = parsePlayerCountFromOutput(output);
+    
+    // If we successfully got and parsed output, server is online and responsive
+    console.log(`[Minecraft] Server is ONLINE and responsive with ${playerCount} players`);
     
     return {
       online: true,

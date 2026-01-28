@@ -13,6 +13,7 @@
 
 import * as pty from 'node-pty';
 import { IPty } from 'node-pty';
+import { exec } from 'child_process';
 
 // Store active PTY instances
 const activeSessions: Map<string, IPty> = new Map();
@@ -166,6 +167,29 @@ export async function attachToSession(serverName: string): Promise<boolean> {
 }
 
 /**
+ * Sanitize session name to prevent command injection
+ * Only allows alphanumeric characters, dashes, and underscores
+ * 
+ * @param name - Session name to sanitize
+ * @returns string - Sanitized session name
+ * @throws Error if name contains invalid characters
+ */
+function sanitizeSessionName(name: string): string {
+  // Only allow alphanumeric, dash, and underscore
+  const sanitized = name.replace(/[^a-zA-Z0-9_-]/g, '');
+  
+  if (sanitized !== name) {
+    throw new Error(`Invalid session name: "${name}". Only alphanumeric characters, dashes, and underscores are allowed.`);
+  }
+  
+  if (sanitized.length === 0) {
+    throw new Error('Session name cannot be empty after sanitization');
+  }
+  
+  return sanitized;
+}
+
+/**
  * Check if a tmux session exists using system command
  * This is more reliable than checking the activeSessions map
  * 
@@ -175,11 +199,12 @@ export async function attachToSession(serverName: string): Promise<boolean> {
 export async function tmuxSessionExists(serverName: string): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      const { exec } = require('child_process');
+      // Sanitize session name to prevent command injection
+      const safeName = sanitizeSessionName(serverName);
       
       // Use tmux has-session to check if session exists
-      exec(`tmux has-session -t ${serverName} 2>/dev/null`, (error: any) => {
-        // Exit code 0 means session exists, non-zero means it doesn't
+      // Exit code 0 means session exists, non-zero means it doesn't
+      exec(`tmux has-session -t ${safeName} 2>/dev/null`, (error: Error | null) => {
         resolve(error === null);
       });
     } catch (error) {
@@ -187,6 +212,18 @@ export async function tmuxSessionExists(serverName: string): Promise<boolean> {
       resolve(false);
     }
   });
+}
+
+/**
+ * Sanitize command string to prevent command injection
+ * Escapes special shell characters
+ * 
+ * @param command - Command to sanitize
+ * @returns string - Sanitized command
+ */
+function sanitizeCommand(command: string): string {
+  // Escape single quotes by replacing ' with '\''
+  return command.replace(/'/g, "'\\''");
 }
 
 /**
@@ -205,20 +242,15 @@ export async function sendCommandAndCapture(
 ): Promise<string> {
   return new Promise((resolve) => {
     try {
-      const { exec } = require('child_process');
-      
-      // Create a temporary file for capturing output
-      const captureFile = `/tmp/minecraft-console-${Date.now()}.txt`;
+      // Sanitize inputs to prevent command injection
+      const safeName = sanitizeSessionName(serverName);
+      const safeCommand = sanitizeCommand(command);
       
       // Use tmux capture-pane to get console output
-      // First send the command, then wait, then capture the pane
-      const captureCommand = `
-        tmux send-keys -t ${serverName} "${command}" C-m 2>/dev/null && \
-        sleep ${timeoutMs / 1000} && \
-        tmux capture-pane -t ${serverName} -p 2>/dev/null
-      `;
+      // Use single quotes around command to prevent shell expansion
+      const captureCommand = `tmux send-keys -t ${safeName} '${safeCommand}' C-m 2>/dev/null && sleep ${timeoutMs / 1000} && tmux capture-pane -t ${safeName} -p 2>/dev/null`;
       
-      exec(captureCommand, { maxBuffer: 1024 * 1024 }, (error: any, stdout: string, stderr: string) => {
+      exec(captureCommand, { maxBuffer: 1024 * 1024 }, (error: Error | null, stdout: string) => {
         if (error) {
           console.error(`Error capturing output from ${serverName}:`, error);
           resolve('');
