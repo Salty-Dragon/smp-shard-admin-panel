@@ -78,24 +78,87 @@
 **Screenshot Location:** Take a screenshot of the empty state
 
 #### Test 4: All Stats Page - With Data
+
+This test validates the collection and display of real-time historical metrics from your server, including CPU usage, memory usage, and Minecraft player count.
+
+**Understanding the Metrics System:**
+
+The admin panel collects **real system metrics** from your server:
+- **CPU Usage**: Live CPU utilization percentage from Node.js OS module
+- **Memory Usage**: Actual system memory statistics in real-time
+- **Player Count**: Real player count from your Minecraft server via tmux console integration
+- **Database Metrics**: Connection stats and query times from your database
+
+These are **NOT mock values** - they reflect your actual server's current state.
+
+**Enabling Historical Data Collection:**
+
+The metrics API (`/api/monitoring/metrics`) collects live metrics on every call. To save these snapshots to the database for historical tracking, add the `?saveHistory=true` parameter:
+
 **Steps:**
-1. Enable historical data collection:
+
+1. **Get Your Session Token** (Required for authentication):
+   - Log in to the admin panel in your browser
+   - Open Browser DevTools (F12) → Application tab → Cookies
+   - Find the cookie named `next-auth.session-token` (or `__Secure-next-auth.session-token` in production)
+   - Copy the cookie value
+
+2. **Manually Collect Historical Data** (For Testing):
    ```bash
-   # Call the metrics API with saveHistory parameter
+   # Call the metrics API with saveHistory parameter to save a snapshot
+   # Replace localhost:3000 with your server URL if different
    curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true \
      -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
    ```
-2. Run the above command several times (every few minutes)
-3. Navigate to `/apanel44/all-stats/`
-4. Verify charts display with data points
+   
+   Run this same command 5-10 times, waiting 2 minutes between each execution, to collect several data points.
+
+3. **Verify Data Collection**:
+   After collecting several data points, check the database:
+   ```bash
+   # Using Prisma Studio
+   npx prisma studio
+   # Navigate to ServerMetrics table to see the saved records
+   ```
+   
+   Or query directly:
+   ```sql
+   SELECT COUNT(*) FROM ServerMetrics;
+   SELECT timestamp, cpuUsage, memoryUsagePercent, playerCount 
+   FROM ServerMetrics 
+   ORDER BY timestamp DESC 
+   LIMIT 10;
+   ```
+
+4. **View Historical Data on All Stats Page**:
+   - Navigate to `/apanel44/all-stats/`
+   - Verify charts display with the collected data points
+   - Test the time range selector (24h, 7d, 30d)
+
+**For Production - Continuous Data Collection:**
+
+Set up automated collection using a cron job (see the "Production Deployment" section below). This will continuously save metrics every 5 minutes for ongoing historical tracking.
 
 **Expected Results:**
-- Three charts visible (CPU, Memory, Player Count)
-- Charts show line graphs with data points
-- Hover over lines shows tooltip with values
-- Time range selector works (24h, 7d, 30d)
+- Three charts visible: **CPU Usage Trend**, **Memory Usage Trend**, and **Player Count Trend**
+- Charts show line graphs with real data points collected from your system
+- Each data point represents actual server metrics at that timestamp
+- Hover over lines shows tooltip with exact values and timestamps
+- Time range selector works correctly (24h, 7d, 30d)
+- Player count reflects actual players from your Minecraft server (0 if server is offline)
+- Empty state message disappears once historical data exists
 
-**Screenshot Location:** Take screenshots of each chart
+**What You're Seeing:**
+- **CPU Usage**: Real-time CPU utilization of the Node.js application server
+- **Memory Usage**: Actual memory consumption of your system
+- **Player Count**: Live player count from Minecraft server via tmux console commands (will be 0 if Minecraft server is not running in a tmux session)
+
+**Screenshot Location:** Take screenshots of each chart showing real data trends
+
+**Troubleshooting:**
+- If player count shows 0: Ensure your Minecraft server is running in a tmux session (default: `minecraft-server`) or set `MINECRAFT_SERVER_SESSION` environment variable
+- If no data appears: Verify you've called the API with `?saveHistory=true` and check the ServerMetrics table in the database
+- If authentication fails: Make sure your session token is valid and your user has Admin or Super Admin role
 
 #### Test 5: Time Range Selector
 **Steps:**
