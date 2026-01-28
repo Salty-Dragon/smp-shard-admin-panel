@@ -169,14 +169,14 @@ export default function AllStats({ user }: AllStatsProps) {
                 <p>
                   To begin collecting data, call the metrics API with the{' '}
                   <code className="bg-stone-900 px-2 py-1 rounded">?saveHistory=true</code>{' '}
-                  parameter:
+                  parameter (requires authentication):
                 </p>
                 <code className="bg-stone-900 px-3 py-2 rounded block text-xs text-left max-w-2xl mx-auto overflow-x-auto">
                   curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true
                 </code>
                 <p className="pt-2">
-                  For continuous collection, set up a cron job (see{' '}
-                  <span className="text-green-400">TESTING_DEPLOYMENT_GUIDE.md</span>).
+                  For complete setup instructions including authentication, see{' '}
+                  <span className="text-green-400">TESTING_DEPLOYMENT_GUIDE.md</span>.
                 </p>
                 <p className="text-xs text-stone-500 pt-2">
                   Metrics include: CPU usage, memory usage, database stats, and real Minecraft player counts

@@ -106,17 +106,12 @@ The metrics API (`/api/monitoring/metrics`) collects live metrics on every call.
 2. **Manually Collect Historical Data** (For Testing):
    ```bash
    # Call the metrics API with saveHistory parameter to save a snapshot
+   # Replace localhost:3000 with your server URL if different
    curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true \
      -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
    ```
    
-   Run this command 5-10 times, waiting 2 minutes between each execution, to collect several data points:
-   ```bash
-   # Collect a data point - repeat this command manually
-   # Wait 2 minutes between each execution
-   curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true \
-     -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
-   ```
+   Run this same command 5-10 times, waiting 2 minutes between each execution, to collect several data points.
 
 3. **Verify Data Collection**:
    After collecting several data points, check the database:
