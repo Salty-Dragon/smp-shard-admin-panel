@@ -11,7 +11,7 @@ import { signOut } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import Spinner from '@/components/Spinner';
 
 interface AllStatsProps {
@@ -462,7 +462,7 @@ export default function AllStats({ user }: AllStatsProps) {
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#292524', border: '2px solid #44403c', borderRadius: '4px' }}
                       labelStyle={{ color: '#4ade80' }}
-                      formatter={(value: number) => [value === 1 ? 'Online' : 'Offline', 'Status']}
+                      formatter={(value: number | undefined) => [value === 1 ? 'Online' : 'Offline', 'Status']}
                     />
                     <Legend 
                       wrapperStyle={{ color: '#a8a29e' }}
@@ -470,27 +470,12 @@ export default function AllStats({ user }: AllStatsProps) {
                     />
                     <Bar 
                       dataKey="serverOnline" 
-                      fill="#10b981"
                       name="Server Status"
-                      shape={(props: {
-                        x: number;
-                        y: number;
-                        width: number;
-                        height: number;
-                        payload: { serverOnline: boolean };
-                      }) => {
-                        const { x, y, width, height, payload } = props;
-                        return (
-                          <rect
-                            x={x}
-                            y={y}
-                            width={width}
-                            height={height}
-                            fill={payload.serverOnline ? '#10b981' : '#ef4444'}
-                          />
-                        );
-                      }}
-                    />
+                    >
+                      {metricsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.serverOnline ? '#10b981' : '#ef4444'} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
                 <div className="mt-4 flex items-center justify-center gap-6 text-sm">

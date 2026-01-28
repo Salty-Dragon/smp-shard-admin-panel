@@ -4,7 +4,7 @@
  * This endpoint can be called by cron jobs or external schedulers
  * 
  * Usage: Add this to your crontab to collect metrics every 5 minutes:
- * */5 * * * * curl -X GET "http://localhost:3000/apanel44/api/monitoring/collect?token=YOUR_SECRET_TOKEN" >> /var/log/metrics-collection.log 2>&1
+ * (cron pattern: every 5 minutes) curl -X GET "http://localhost:3000/apanel44/api/monitoring/collect?token=YOUR_SECRET_TOKEN" >> /var/log/metrics-collection.log 2>&1
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
