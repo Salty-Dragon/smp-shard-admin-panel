@@ -3,16 +3,14 @@
  * Provides functions to interact with Minecraft servers and retrieve player data
  */
 
-import { sendCommand } from './console';
-
 /**
  * Get current player count from Minecraft server
  * This function sends a 'list' command to the server console and parses the response
  * 
- * @param serverName - Name of the server session
+ * @param _serverName - Name of the server session (currently unused in mock implementation)
  * @returns Promise<number> - Number of online players, or 0 if unable to fetch
  */
-export async function getPlayerCount(serverName: string = 'minecraft-server'): Promise<number> {
+export async function getPlayerCount(_serverName: string = 'minecraft-server'): Promise<number> {
   try {
     // For now, return a simulated player count
     // In production, this should:
@@ -33,10 +31,10 @@ export async function getPlayerCount(serverName: string = 'minecraft-server'): P
 /**
  * Get list of online players from Minecraft server
  * 
- * @param serverName - Name of the server session
+ * @param _serverName - Name of the server session (currently unused in mock implementation)
  * @returns Promise<string[]> - Array of player names
  */
-export async function getOnlinePlayers(serverName: string = 'minecraft-server'): Promise<string[]> {
+export async function getOnlinePlayers(_serverName: string = 'minecraft-server'): Promise<string[]> {
   try {
     // For production implementation:
     // 1. Send 'list' command via sendCommand()

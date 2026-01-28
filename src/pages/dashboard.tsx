@@ -55,8 +55,6 @@ interface ErrorReport {
 }
 
 export default function Dashboard({ user, version }: DashboardProps) {
-  const router = useRouter();
-  const { data: session } = useSession();
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
   const [errorReports, setErrorReports] = useState<ErrorReport[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
@@ -77,6 +75,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
     }, 10000);
     
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRecentActivity = async () => {

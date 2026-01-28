@@ -37,6 +37,7 @@ export default function AllStats({ user }: AllStatsProps) {
 
   useEffect(() => {
     fetchHistoricalMetrics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange]);
 
   const fetchHistoricalMetrics = async () => {
@@ -46,7 +47,12 @@ export default function AllStats({ user }: AllStatsProps) {
       if (response.ok) {
         const data = await response.json();
         if (data.metrics && data.metrics.length > 0) {
-          setMetricsData(data.metrics.map((m: any) => ({
+          setMetricsData(data.metrics.map((m: {
+            timestamp: string | Date;
+            cpuUsage: number;
+            memoryUsagePercent: number;
+            playerCount: number | null;
+          }) => ({
             timestamp: new Date(m.timestamp).toLocaleString(),
             cpuUsage: m.cpuUsage,
             memoryUsagePercent: m.memoryUsagePercent,
@@ -293,7 +299,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   // Only allow Admin and Super Admin roles
-  const userRole = (session.user as any).role;
+  const userRole = (session.user as { role?: string }).role;
   if (userRole !== 'Super Admin' && userRole !== 'Admin') {
     return {
       redirect: {
@@ -306,10 +312,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
     props: {
       user: {
-        id: (session.user as any).id,
+        id: (session.user as { id?: string }).id || '',
         email: session.user.email || '',
         name: session.user.name || 'User',
-        role: userRole,
+        role: userRole || '',
       },
     },
   };
