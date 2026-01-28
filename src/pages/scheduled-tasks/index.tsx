@@ -22,10 +22,17 @@ interface ScheduledTask {
   scheduledFor: string | null;
   cronExpression: string | null;
   status: string;
-  nextRun: string | null;
-  lastRun: string | null;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
   createdAt: string;
   updatedAt: string;
+  user: {
+    name: string;
+    email: string;
+    role: {
+      name: string;
+    };
+  };
 }
 
 interface ScheduledTasksPageProps {
@@ -136,20 +143,25 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
         ? `/apanel44/api/scheduled-tasks/${editingTask.id}`
         : '/apanel44/api/scheduled-tasks';
       
-      const method = editingTask ? 'PUT' : 'POST';
+      const method = editingTask ? 'PATCH' : 'POST';
 
       const body: Record<string, unknown> = {
         name: formData.name,
         description: formData.description || null,
-        taskType: formData.taskType,
         scheduleType: formData.scheduleType,
         status: formData.status,
       };
 
+      if (!editingTask) {
+        body.taskType = formData.taskType;
+      }
+
       if (formData.scheduleType === 'once') {
         body.scheduledFor = formData.scheduledFor ? new Date(formData.scheduledFor).toISOString() : null;
+        body.cronExpression = null;
       } else {
         body.cronExpression = formData.cronExpression;
+        body.scheduledFor = null;
       }
 
       const response = await fetch(url, {
@@ -370,16 +382,16 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                                 <span>Cron: {task.cronExpression}</span>
                               </>
                             )}
-                            {task.nextRun && (
+                            {task.nextRunAt && (
                               <>
                                 <span>•</span>
-                                <span>Next: {new Date(task.nextRun).toLocaleString()}</span>
+                                <span>Next: {new Date(task.nextRunAt).toLocaleString()}</span>
                               </>
                             )}
-                            {task.lastRun && (
+                            {task.lastRunAt && (
                               <>
                                 <span>•</span>
-                                <span>Last: {new Date(task.lastRun).toLocaleString()}</span>
+                                <span>Last: {new Date(task.lastRunAt).toLocaleString()}</span>
                               </>
                             )}
                           </div>
@@ -453,6 +465,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}
                 className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
                 required
+                disabled={!!editingTask}
               >
                 <option value="backup">Backup</option>
                 <option value="cleanup">Cleanup</option>
@@ -460,6 +473,11 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <option value="unban">Unban</option>
                 <option value="custom">Custom</option>
               </select>
+              {editingTask && (
+                <p className="text-stone-500 text-xs mt-1">
+                  Task type cannot be changed after creation
+                </p>
+              )}
             </div>
 
             <div>
@@ -488,7 +506,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 value={formData.scheduledFor}
                 onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
                 className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
-                required
+                required={formData.scheduleType === 'once'}
               />
             </div>
           ) : (
@@ -501,7 +519,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 value={formData.cronExpression}
                 onChange={(e) => setFormData({ ...formData, cronExpression: e.target.value })}
                 className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
-                required
+                required={formData.scheduleType === 'recurring'}
                 placeholder="0 0 * * *"
               />
               <p className="text-stone-500 text-xs mt-1">
