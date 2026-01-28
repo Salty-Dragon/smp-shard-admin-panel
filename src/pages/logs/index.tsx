@@ -96,7 +96,7 @@ export default function LogsPage({ user }: LogsPageProps) {
         params.append('startDate', startDate.toISOString());
       }
 
-      const response = await fetch(`/api/logs?${params.toString()}`);
+      const response = await fetch(`/apanel44/api/logs?${params.toString()}`);
       
       if (response.ok) {
         const data = await response.json();
