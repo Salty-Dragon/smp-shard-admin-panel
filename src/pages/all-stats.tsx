@@ -163,13 +163,25 @@ export default function AllStats({ user }: AllStatsProps) {
               <div className="text-6xl mb-4">📊</div>
               <h2 className="text-2xl font-bold text-green-400 mb-4">No Historical Data Yet</h2>
               <p className="text-stone-300 mb-4">
-                Historical metrics will be collected automatically over time.
+                Start collecting real-time server metrics to view historical trends.
               </p>
-              <p className="text-stone-400 text-sm">
-                To start collecting data, enable metric history saving by adding 
-                <code className="bg-stone-900 px-2 py-1 rounded mx-2">?saveHistory=true</code> 
-                to the metrics API endpoint.
-              </p>
+              <div className="text-stone-400 text-sm space-y-2">
+                <p>
+                  To begin collecting data, call the metrics API with the{' '}
+                  <code className="bg-stone-900 px-2 py-1 rounded">?saveHistory=true</code>{' '}
+                  parameter:
+                </p>
+                <code className="bg-stone-900 px-3 py-2 rounded block text-xs text-left max-w-2xl mx-auto overflow-x-auto">
+                  curl /apanel44/api/monitoring/metrics?saveHistory=true
+                </code>
+                <p className="pt-2">
+                  For continuous collection, set up a cron job (see{' '}
+                  <span className="text-green-400">TESTING_DEPLOYMENT_GUIDE.md</span>).
+                </p>
+                <p className="text-xs text-stone-500 pt-2">
+                  Metrics include: CPU usage, memory usage, database stats, and real Minecraft player counts
+                </p>
+              </div>
             </div>
           ) : (
             <>
