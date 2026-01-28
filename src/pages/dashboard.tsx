@@ -55,19 +55,27 @@ interface ErrorReport {
 }
 
 export default function Dashboard({ user, version }: DashboardProps) {
-  const router = useRouter();
-  const { data: session } = useSession();
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
   const [errorReports, setErrorReports] = useState<ErrorReport[]>([]);
+  const [playerCount, setPlayerCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [showErrorReportModal, setShowErrorReportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
 
   useEffect(() => {
     fetchRecentActivity();
+    fetchPlayerCount();
     if (user.role === 'Super Admin') {
       fetchErrorReports();
     }
+    
+    // Set up periodic refresh for player count every 10 seconds
+    const interval = setInterval(() => {
+      fetchPlayerCount();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRecentActivity = async () => {
@@ -81,6 +89,20 @@ export default function Dashboard({ user, version }: DashboardProps) {
       console.error('Error fetching recent activity:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPlayerCount = async () => {
+    try {
+      const response = await fetch('/apanel44/api/monitoring/metrics');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.metrics && typeof data.metrics.playerCount === 'number') {
+          setPlayerCount(data.metrics.playerCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching player count:', error);
     }
   };
 
@@ -274,6 +296,12 @@ export default function Dashboard({ user, version }: DashboardProps) {
                 </div>
                 <div className="bg-stone-900 border-2 border-stone-700 p-4 text-center">
                   <div className="text-3xl font-bold text-green-400">
+                    {playerCount}
+                  </div>
+                  <div className="text-stone-400 text-sm mt-1">Players Online</div>
+                </div>
+                <div className="bg-stone-900 border-2 border-stone-700 p-4 text-center">
+                  <div className="text-3xl font-bold text-green-400">
                     Online
                   </div>
                   <div className="text-stone-400 text-sm mt-1">Server Status</div>
@@ -287,7 +315,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
                       <div className="text-stone-400 text-sm mt-1">Open Reports</div>
                     </div>
                     <Link
-                      href="/error-reports"
+                      href="/all-stats"
                       className="bg-stone-900 border-2 border-stone-700 hover:border-green-600 p-4 text-center transition-all"
                     >
                       <div className="text-3xl font-bold text-green-400">
