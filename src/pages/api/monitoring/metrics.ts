@@ -7,6 +7,7 @@ import { NextApiResponse } from 'next';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
 import os from 'os';
+import { getPlayerCount } from '@/lib/minecraft';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -96,6 +97,9 @@ async function collectMetrics() {
 
   // System uptime
   const uptime = os.uptime();
+  
+  // Player count from Minecraft server
+  const playerCount = await getPlayerCount();
 
   return {
     cpuUsage: parseFloat(cpuUsage.toFixed(2)),
@@ -110,6 +114,7 @@ async function collectMetrics() {
     apiErrorRate,
     apiRequestCount,
     uptime: parseFloat(uptime.toFixed(2)),
+    playerCount,
   };
 }
 

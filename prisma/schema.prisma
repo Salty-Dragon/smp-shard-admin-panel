@@ -192,6 +192,7 @@ model ServerMetrics {
   // Additional metrics
   uptime            Float?   // Server uptime in seconds
   diskUsage         Float?   // Disk usage percentage
+  playerCount       Int?     // Current online player count
   
   // Timestamp
   timestamp         DateTime @default(now())
