@@ -18,23 +18,30 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
-      const { timeRange = '24h', limit = '100' } = req.query;
+      const { timeRange = '24h', limit = '100', startDate: customStart, endDate: customEnd } = req.query;
       
-      // Calculate the date range based on the timeRange parameter
+      // Calculate the date range based on the timeRange parameter or custom dates
       const now = new Date();
       let startDate: Date;
+      let endDate: Date = now;
       
-      switch (timeRange) {
-        case '7d':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case '30d':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case '24h':
-        default:
-          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
+      // If custom dates provided, use those instead
+      if (customStart && customEnd) {
+        startDate = new Date(customStart as string);
+        endDate = new Date(customEnd as string);
+      } else {
+        switch (timeRange) {
+          case '7d':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '30d':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case '24h':
+          default:
+            startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            break;
+        }
       }
 
       // Fetch historical metrics from database
@@ -42,6 +49,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         where: {
           timestamp: {
             gte: startDate,
+            lte: endDate,
           },
         },
         orderBy: {

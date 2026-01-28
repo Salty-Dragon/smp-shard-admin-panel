@@ -10,8 +10,8 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { signOut } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useEffect, useState, useRef } from 'react';
+import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Spinner from '@/components/Spinner';
 
 interface AllStatsProps {
@@ -28,22 +28,57 @@ interface MetricsData {
   cpuUsage: number;
   memoryUsagePercent: number;
   playerCount: number | null;
+  diskUsage: number | null;
+  serverOnline: boolean;
 }
 
 export default function AllStats({ user }: AllStatsProps) {
   const [metricsData, setMetricsData] = useState<MetricsData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | 'custom'>('24h');
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState<10 | 30>(30);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchHistoricalMetrics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeRange]);
+  }, [timeRange, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    // Set up auto-refresh if enabled
+    if (autoRefresh) {
+      intervalRef.current = setInterval(() => {
+        fetchHistoricalMetrics();
+      }, refreshInterval * 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, refreshInterval, timeRange, customStartDate, customEndDate]);
 
   const fetchHistoricalMetrics = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/apanel44/api/monitoring/history?timeRange=${timeRange}`);
+      let url = `/apanel44/api/monitoring/history?timeRange=${timeRange}`;
+      
+      // If custom date range is selected and dates are provided
+      if (timeRange === 'custom' && customStartDate && customEndDate) {
+        url = `/apanel44/api/monitoring/history?startDate=${customStartDate}&endDate=${customEndDate}`;
+      }
+      
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         if (data.metrics && data.metrics.length > 0) {
@@ -52,14 +87,17 @@ export default function AllStats({ user }: AllStatsProps) {
             cpuUsage: number;
             memoryUsagePercent: number;
             playerCount: number | null;
+            diskUsage: number | null;
+            serverOnline: boolean;
           }) => ({
             timestamp: new Date(m.timestamp).toLocaleString(),
             cpuUsage: m.cpuUsage,
             memoryUsagePercent: m.memoryUsagePercent,
             playerCount: m.playerCount,
+            diskUsage: m.diskUsage || 0,
+            serverOnline: m.serverOnline || false,
           })));
         } else {
-          // No historical data, show message
           setMetricsData([]);
         }
       }
@@ -120,7 +158,7 @@ export default function AllStats({ user }: AllStatsProps) {
           {/* Time Range Selector */}
           <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
             <h2 className="text-xl font-bold text-green-400 mb-4">Time Range</h2>
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap gap-4 mb-4">
               <button
                 onClick={() => setTimeRange('24h')}
                 className={`px-6 py-2 rounded transition-colors ${
@@ -150,6 +188,82 @@ export default function AllStats({ user }: AllStatsProps) {
                 }`}
               >
                 Last 30 Days
+              </button>
+              <button
+                onClick={() => setTimeRange('custom')}
+                className={`px-6 py-2 rounded transition-colors ${
+                  timeRange === 'custom'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-stone-700 text-stone-300 hover:bg-stone-600'
+                }`}
+              >
+                Custom Range
+              </button>
+            </div>
+            
+            {/* Custom Date Range Picker */}
+            {timeRange === 'custom' && (
+              <div className="flex flex-wrap gap-4 items-end mt-4 p-4 bg-stone-900 rounded">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-stone-300 mb-2 text-sm">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                  />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-stone-300 mb-2 text-sm">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                  />
+                </div>
+                <button
+                  onClick={fetchHistoricalMetrics}
+                  disabled={!customStartDate || !customEndDate}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white rounded transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            
+            {/* Auto-Refresh Controls */}
+            <div className="flex flex-wrap gap-4 items-center mt-4 pt-4 border-t border-stone-700">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="autoRefresh"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="w-4 h-4 accent-green-600"
+                />
+                <label htmlFor="autoRefresh" className="text-stone-300">
+                  Auto-refresh
+                </label>
+              </div>
+              {autoRefresh && (
+                <div className="flex items-center gap-2">
+                  <label className="text-stone-300 text-sm">Interval:</label>
+                  <select
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(parseInt(e.target.value) as 10 | 30)}
+                    className="px-3 py-1 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                  >
+                    <option value={10}>10 seconds</option>
+                    <option value={30}>30 seconds</option>
+                  </select>
+                </div>
+              )}
+              <button
+                onClick={fetchHistoricalMetrics}
+                className="px-4 py-1 bg-stone-700 hover:bg-stone-600 text-stone-300 rounded transition-colors text-sm"
+              >
+                🔄 Refresh Now
               </button>
             </div>
           </div>
@@ -287,6 +401,108 @@ export default function AllStats({ user }: AllStatsProps) {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+
+              {/* Disk Usage Chart */}
+              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+                <h2 className="text-xl font-bold text-green-400 mb-4">Disk Usage Trend</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={metricsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#44403c" />
+                    <XAxis 
+                      dataKey="timestamp" 
+                      stroke="#a8a29e"
+                      tick={{ fill: '#a8a29e', fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      stroke="#a8a29e"
+                      tick={{ fill: '#a8a29e' }}
+                      domain={[0, 100]}
+                      label={{ value: 'Disk Usage (%)', angle: -90, position: 'insideLeft', fill: '#a8a29e' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#292524', border: '2px solid #44403c', borderRadius: '4px' }}
+                      labelStyle={{ color: '#4ade80' }}
+                    />
+                    <Legend wrapperStyle={{ color: '#a8a29e' }} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="diskUsage" 
+                      stroke="#8b5cf6" 
+                      fill="#8b5cf6"
+                      fillOpacity={0.3}
+                      strokeWidth={2}
+                      name="Disk Usage (%)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Server Status History */}
+              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+                <h2 className="text-xl font-bold text-green-400 mb-4">Server Status History</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metricsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#44403c" />
+                    <XAxis 
+                      dataKey="timestamp" 
+                      stroke="#a8a29e"
+                      tick={{ fill: '#a8a29e', fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      stroke="#a8a29e"
+                      tick={{ fill: '#a8a29e' }}
+                      domain={[0, 1]}
+                      ticks={[0, 1]}
+                      tickFormatter={(value) => value === 1 ? 'Online' : 'Offline'}
+                      label={{ value: 'Server Status', angle: -90, position: 'insideLeft', fill: '#a8a29e' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#292524', border: '2px solid #44403c', borderRadius: '4px' }}
+                      labelStyle={{ color: '#4ade80' }}
+                      formatter={(value: number) => [value === 1 ? 'Online' : 'Offline', 'Status']}
+                    />
+                    <Legend 
+                      wrapperStyle={{ color: '#a8a29e' }}
+                      formatter={() => 'Server Status'}
+                    />
+                    <Bar 
+                      dataKey="serverOnline" 
+                      fill="#10b981"
+                      name="Server Status"
+                      shape={(props: {
+                        x: number;
+                        y: number;
+                        width: number;
+                        height: number;
+                        payload: { serverOnline: boolean };
+                      }) => {
+                        const { x, y, width, height, payload } = props;
+                        return (
+                          <rect
+                            x={x}
+                            y={y}
+                            width={width}
+                            height={height}
+                            fill={payload.serverOnline ? '#10b981' : '#ef4444'}
+                          />
+                        );
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span className="text-stone-300">Online</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span className="text-stone-300">Offline</span>
+                  </div>
+                </div>
               </div>
             </>
           )}

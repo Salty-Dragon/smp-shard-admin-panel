@@ -7,7 +7,8 @@ import { NextApiResponse } from 'next';
 import { withAuth, AuthenticatedRequest } from '@/lib/middleware';
 import prisma from '@/lib/prisma';
 import os from 'os';
-import { getPlayerCount } from '@/lib/minecraft';
+import { promises as fs } from 'fs';
+import { getServerStatus } from '@/lib/minecraft';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -36,10 +37,19 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Optionally save to database for historical tracking
       const { saveHistory } = req.query;
       if (saveHistory === 'true') {
-        await prisma.serverMetrics.create({
-          data: metrics,
-        });
-        console.log('[Metrics API] Metrics saved to database for historical tracking');
+        try {
+          await prisma.serverMetrics.create({
+            data: metrics,
+          });
+          console.log('[Metrics API] Metrics saved to database for historical tracking');
+        } catch (saveError) {
+          console.error('[Metrics API] Error saving metrics to database:', saveError);
+          // Still return metrics even if save fails
+          return res.status(200).json({ 
+            metrics,
+            warning: 'Metrics collected but failed to save to database for history'
+          });
+        }
       }
 
       return res.status(200).json({ metrics });
@@ -112,11 +122,33 @@ async function collectMetrics() {
   // System uptime
   const uptime = os.uptime();
   
-  // Player count from Minecraft server
-  // This will return 0 if server is offline or unreachable
-  console.log('[Metrics] Fetching Minecraft player count...');
-  const playerCount = await getPlayerCount();
-  console.log(`[Metrics] Player count retrieved: ${playerCount}`);
+  // Disk usage metrics
+  let diskUsage = 0;
+  try {
+    // Try to get disk usage from /proc/diskstats on Linux
+    const stats = await fs.statfs('/');
+    const total = stats.blocks * stats.bsize;
+    const free = stats.bfree * stats.bsize;
+    diskUsage = ((total - free) / total) * 100;
+  } catch (error) {
+    console.log('[Metrics] Could not fetch disk usage:', error);
+    // Disk usage will remain 0 if we can't fetch it
+  }
+  
+  // Player count and server status from Minecraft server
+  console.log('[Metrics] Fetching Minecraft server status...');
+  let playerCount = 0;
+  let serverOnline = false;
+  
+  try {
+    const status = await getServerStatus();
+    playerCount = status.playerCount;
+    serverOnline = status.online;
+    console.log(`[Metrics] Server status: ${serverOnline ? 'ONLINE' : 'OFFLINE'}, Players: ${playerCount}`);
+  } catch (error) {
+    console.error('[Metrics] Error fetching server status:', error);
+    // playerCount and serverOnline will remain at defaults
+  }
 
   return {
     cpuUsage: parseFloat(cpuUsage.toFixed(2)),
@@ -131,7 +163,9 @@ async function collectMetrics() {
     apiErrorRate,
     apiRequestCount,
     uptime: parseFloat(uptime.toFixed(2)),
+    diskUsage: parseFloat(diskUsage.toFixed(2)),
     playerCount,
+    serverOnline,
   };
 }
 
