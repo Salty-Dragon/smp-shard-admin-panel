@@ -61,8 +61,12 @@ export default function Dashboard({ user, version }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [showErrorReportModal, setShowErrorReportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
+  const [currentTime, setCurrentTime] = useState<string>('');
 
   useEffect(() => {
+    // Set current time on client side only to avoid hydration mismatch
+    setCurrentTime(new Date().toLocaleString());
+    
     fetchRecentActivity();
     fetchPlayerCount();
     if (user.role === 'Super Admin') {
@@ -277,7 +281,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
                 </div>
                 <div className="flex items-center text-stone-300">
                   <span className="mr-3">🕒</span>
-                  <span>{new Date().toLocaleString()}</span>
+                  <span>{currentTime || 'Loading...'}</span>
                 </div>
               </div>
             </div>
