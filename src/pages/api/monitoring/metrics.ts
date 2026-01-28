@@ -20,8 +20,18 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
+      // Log the metrics fetch attempt
+      console.log('[Metrics API] Fetching server metrics...');
+
       // Collect system metrics
       const metrics = await collectMetrics();
+
+      console.log('[Metrics API] Metrics collected successfully:', {
+        cpuUsage: metrics.cpuUsage,
+        memoryUsagePercent: metrics.memoryUsagePercent,
+        playerCount: metrics.playerCount,
+        dbStatus: metrics.dbStatus,
+      });
 
       // Optionally save to database for historical tracking
       const { saveHistory } = req.query;
@@ -29,12 +39,16 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         await prisma.serverMetrics.create({
           data: metrics,
         });
+        console.log('[Metrics API] Metrics saved to database for historical tracking');
       }
 
       return res.status(200).json({ metrics });
     } catch (error) {
-      console.error('Error fetching server metrics:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error('[Metrics API] Error fetching server metrics:', error);
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'Failed to fetch server metrics'
+      });
     }
   }
 
@@ -99,7 +113,10 @@ async function collectMetrics() {
   const uptime = os.uptime();
   
   // Player count from Minecraft server
+  // This will return 0 if server is offline or unreachable
+  console.log('[Metrics] Fetching Minecraft player count...');
   const playerCount = await getPlayerCount();
+  console.log(`[Metrics] Player count retrieved: ${playerCount}`);
 
   return {
     cpuUsage: parseFloat(cpuUsage.toFixed(2)),

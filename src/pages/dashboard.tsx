@@ -58,6 +58,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
   const [errorReports, setErrorReports] = useState<ErrorReport[]>([]);
   const [playerCount, setPlayerCount] = useState<number>(0);
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null); // null = checking, true = online, false = offline
   const [loading, setLoading] = useState(true);
   const [showErrorReportModal, setShowErrorReportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -68,14 +69,14 @@ export default function Dashboard({ user, version }: DashboardProps) {
     setCurrentTime(new Date().toLocaleString());
     
     fetchRecentActivity();
-    fetchPlayerCount();
+    fetchServerStatus();
     if (user.role === 'Super Admin') {
       fetchErrorReports();
     }
     
-    // Set up periodic refresh for player count every 10 seconds
+    // Set up periodic refresh for server status every 10 seconds
     const interval = setInterval(() => {
-      fetchPlayerCount();
+      fetchServerStatus();
     }, 10000);
     
     return () => clearInterval(interval);
@@ -96,17 +97,25 @@ export default function Dashboard({ user, version }: DashboardProps) {
     }
   };
 
-  const fetchPlayerCount = async () => {
+  const fetchServerStatus = async () => {
     try {
-      const response = await fetch('/apanel44/api/monitoring/metrics');
+      const response = await fetch('/apanel44/api/monitoring/server-status');
       if (response.ok) {
         const data = await response.json();
-        if (data.metrics && typeof data.metrics.playerCount === 'number') {
-          setPlayerCount(data.metrics.playerCount);
+        if (data.status) {
+          setServerOnline(data.status.online);
+          setPlayerCount(data.status.playerCount);
         }
+      } else {
+        // If API fails, assume server is offline
+        setServerOnline(false);
+        setPlayerCount(0);
       }
     } catch (error) {
-      console.error('Error fetching player count:', error);
+      console.error('Error fetching server status:', error);
+      // On error, assume server is offline
+      setServerOnline(false);
+      setPlayerCount(0);
     }
   };
 
@@ -305,8 +314,12 @@ export default function Dashboard({ user, version }: DashboardProps) {
                   <div className="text-stone-400 text-sm mt-1">Players Online</div>
                 </div>
                 <div className="bg-stone-900 border-2 border-stone-700 p-4 text-center">
-                  <div className="text-3xl font-bold text-green-400">
-                    Online
+                  <div className={`text-3xl font-bold ${
+                    serverOnline === null ? 'text-stone-400' : 
+                    serverOnline ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {serverOnline === null ? 'Checking...' : 
+                     serverOnline ? 'Online' : 'Offline'}
                   </div>
                   <div className="text-stone-400 text-sm mt-1">Server Status</div>
                 </div>

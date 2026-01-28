@@ -164,3 +164,73 @@ export async function attachToSession(serverName: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Check if a tmux session exists using system command
+ * This is more reliable than checking the activeSessions map
+ * 
+ * @param serverName - Server identifier
+ * @returns Promise<boolean> - True if tmux session exists
+ */
+export async function tmuxSessionExists(serverName: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      const { exec } = require('child_process');
+      
+      // Use tmux has-session to check if session exists
+      exec(`tmux has-session -t ${serverName} 2>/dev/null`, (error: any) => {
+        // Exit code 0 means session exists, non-zero means it doesn't
+        resolve(error === null);
+      });
+    } catch (error) {
+      console.error(`Error checking tmux session ${serverName}:`, error);
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Send command to tmux session and capture output
+ * This sends a command and attempts to read the console output
+ * 
+ * @param serverName - Server identifier  
+ * @param command - Command to execute
+ * @param timeoutMs - How long to wait for output (default: 2000ms)
+ * @returns Promise<string> - Captured output from command
+ */
+export async function sendCommandAndCapture(
+  serverName: string,
+  command: string,
+  timeoutMs: number = 2000
+): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const { exec } = require('child_process');
+      
+      // Create a temporary file for capturing output
+      const captureFile = `/tmp/minecraft-console-${Date.now()}.txt`;
+      
+      // Use tmux capture-pane to get console output
+      // First send the command, then wait, then capture the pane
+      const captureCommand = `
+        tmux send-keys -t ${serverName} "${command}" C-m 2>/dev/null && \
+        sleep ${timeoutMs / 1000} && \
+        tmux capture-pane -t ${serverName} -p 2>/dev/null
+      `;
+      
+      exec(captureCommand, { maxBuffer: 1024 * 1024 }, (error: any, stdout: string, stderr: string) => {
+        if (error) {
+          console.error(`Error capturing output from ${serverName}:`, error);
+          resolve('');
+          return;
+        }
+        
+        // Return the captured output
+        resolve(stdout || '');
+      });
+    } catch (error) {
+      console.error(`Error in sendCommandAndCapture for ${serverName}:`, error);
+      resolve('');
+    }
+  });
+}
