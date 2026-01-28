@@ -9,16 +9,15 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { signOut } from 'next-auth/react';
 
 interface Role {
   id: string;
   name: string;
   description: string | null;
   createdAt: string;
+  permissions?: Array<{ id: string; resource: string; action: string }>;
   _count?: {
     users: number;
-    permissions: number;
   };
 }
 
@@ -42,7 +41,7 @@ export default function RolesPage({ user }: RolesPageProps) {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch('/apanel44/api/roles');
+      const response = await fetch('/api/roles');
       if (response.ok) {
         const data = await response.json();
         setRoles(data.roles || []);
@@ -57,9 +56,6 @@ export default function RolesPage({ user }: RolesPageProps) {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
-  };
 
   return (
     <>
@@ -83,81 +79,14 @@ export default function RolesPage({ user }: RolesPageProps) {
                 <p className="text-stone-400 text-sm">Roles Management</p>
               </div>
             </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-white font-semibold">{user.name}</p>
-                <p className="text-stone-400 text-sm">{user.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
-              >
-                Logout
-              </button>
-            </div>
+            <Link
+              href="/dashboard"
+              className="text-green-400 hover:text-green-300 font-semibold"
+            >
+              ← Back to Dashboard
+            </Link>
           </div>
         </header>
-
-        {/* Navigation */}
-        <nav className="bg-stone-800/50 border-b-2 border-stone-700">
-          <div className="container mx-auto px-4">
-            <div className="flex space-x-1">
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-              >
-                📊 Dashboard
-              </Link>
-              {(user.role === 'Super Admin' || user.role === 'Admin') && (
-                <Link
-                  href="/users"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  👥 Users
-                </Link>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/roles"
-                  className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
-                >
-                  🛡️ Roles
-                </Link>
-              )}
-              {(user.role === 'Super Admin' || user.role === 'Moderator') && (
-                <Link
-                  href="/logs"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  📋 Logs
-                </Link>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/error-reports"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  🐛 Error Reports
-                </Link>
-              )}
-              {(user.role === 'Super Admin' || user.role === 'Admin') && (
-                <Link
-                  href="/scheduled-tasks"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  ⏰ Tasks
-                </Link>
-              )}
-              <Link
-                href="/2fa-setup"
-                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-              >
-                🔐 2FA Setup
-              </Link>
-            </div>
-          </div>
-        </nav>
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
@@ -204,10 +133,10 @@ export default function RolesPage({ user }: RolesPageProps) {
                             Created: {new Date(role.createdAt).toLocaleDateString()}
                           </span>
                           {role._count && (
-                            <>
-                              <span>Users: {role._count.users}</span>
-                              <span>Permissions: {role._count.permissions}</span>
-                            </>
+                            <span>Users: {role._count.users}</span>
+                          )}
+                          {role.permissions && (
+                            <span>Permissions: {role.permissions.length}</span>
                           )}
                         </div>
                       </div>
@@ -225,15 +154,6 @@ export default function RolesPage({ user }: RolesPageProps) {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="bg-stone-800 border-t-4 border-stone-700 mt-8">
-          <div className="container mx-auto px-4 py-4 text-center">
-            <p className="text-stone-400 text-sm">
-              SMP Admin Panel | © {new Date().getFullYear()}
-            </p>
-          </div>
-        </footer>
       </div>
     </>
   );
