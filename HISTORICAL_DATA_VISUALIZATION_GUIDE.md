@@ -5,11 +5,12 @@ This guide explains the historical data visualization features available in the 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Automatic Metrics Collection](#automatic-metrics-collection)
-3. [All Stats Page Features](#all-stats-page-features)
-4. [Chart Types and Metrics](#chart-types-and-metrics)
-5. [Using the Interface](#using-the-interface)
-6. [Troubleshooting](#troubleshooting)
+2. [Database Migration](#database-migration)
+3. [Automatic Metrics Collection](#automatic-metrics-collection)
+4. [All Stats Page Features](#all-stats-page-features)
+5. [Chart Types and Metrics](#chart-types-and-metrics)
+6. [Using the Interface](#using-the-interface)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -24,6 +25,41 @@ The SMP Admin Panel now includes comprehensive historical data visualization cap
 - Set up automatic data refresh
 
 All historical data is stored in the database and displayed through interactive charts on the **All Stats** page.
+
+---
+
+## Database Migration
+
+Before using the historical data visualization features, you need to update your database schema to include the new `serverOnline` field in the `ServerMetrics` table.
+
+### Option 1: Using Prisma Migrate (Recommended)
+
+```bash
+# Run the Prisma migration
+npx prisma migrate deploy
+```
+
+This will apply the migration that adds the `serverOnline` field.
+
+### Option 2: Manual SQL Migration
+
+If you prefer to run the migration manually, execute this SQL on your database:
+
+```sql
+-- Add serverOnline field to ServerMetrics table
+ALTER TABLE `ServerMetrics` 
+ADD COLUMN `serverOnline` BOOLEAN NOT NULL DEFAULT false;
+```
+
+### Verify Migration
+
+Check that the field was added successfully:
+
+```sql
+DESCRIBE ServerMetrics;
+```
+
+You should see the `serverOnline` field in the table structure.
 
 ---
 

@@ -35,6 +35,7 @@ interface MetricsData {
 export default function AllStats({ user }: AllStatsProps) {
   const [metricsData, setMetricsData] = useState<MetricsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | 'custom'>('24h');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<10 | 30>(30);
@@ -70,39 +71,49 @@ export default function AllStats({ user }: AllStatsProps) {
 
   const fetchHistoricalMetrics = async () => {
     setLoading(true);
+    setError(null);
     try {
       let url = `/apanel44/api/monitoring/history?timeRange=${timeRange}`;
       
       // If custom date range is selected and dates are provided
       if (timeRange === 'custom' && customStartDate && customEndDate) {
-        url = `/apanel44/api/monitoring/history?startDate=${customStartDate}&endDate=${customEndDate}`;
+        // URL encode the date parameters
+        const encodedStart = encodeURIComponent(customStartDate);
+        const encodedEnd = encodeURIComponent(customEndDate);
+        url = `/apanel44/api/monitoring/history?startDate=${encodedStart}&endDate=${encodedEnd}`;
       }
       
       const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.metrics && data.metrics.length > 0) {
-          setMetricsData(data.metrics.map((m: {
-            timestamp: string | Date;
-            cpuUsage: number;
-            memoryUsagePercent: number;
-            playerCount: number | null;
-            diskUsage: number | null;
-            serverOnline: boolean;
-          }) => ({
-            timestamp: new Date(m.timestamp).toLocaleString(),
-            cpuUsage: m.cpuUsage,
-            memoryUsagePercent: m.memoryUsagePercent,
-            playerCount: m.playerCount,
-            diskUsage: m.diskUsage || 0,
-            serverOnline: m.serverOnline || false,
-          })));
-        } else {
-          setMetricsData([]);
-        }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch historical metrics');
       }
-    } catch (error) {
-      console.error('Error fetching historical metrics:', error);
+      
+      const data = await response.json();
+      if (data.metrics && data.metrics.length > 0) {
+        setMetricsData(data.metrics.map((m: {
+          timestamp: string | Date;
+          cpuUsage: number;
+          memoryUsagePercent: number;
+          playerCount: number | null;
+          diskUsage: number | null;
+          serverOnline: boolean;
+        }) => ({
+          timestamp: new Date(m.timestamp).toLocaleString(),
+          cpuUsage: m.cpuUsage,
+          memoryUsagePercent: m.memoryUsagePercent,
+          playerCount: m.playerCount,
+          diskUsage: m.diskUsage || 0,
+          serverOnline: m.serverOnline || false,
+        })));
+      } else {
+        setMetricsData([]);
+      }
+    } catch (err) {
+      console.error('Error fetching historical metrics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch historical metrics');
+      setMetricsData([]);
     } finally {
       setLoading(false);
     }
@@ -271,6 +282,20 @@ export default function AllStats({ user }: AllStatsProps) {
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <Spinner />
+            </div>
+          ) : error ? (
+            <div className="bg-stone-800 border-4 border-red-700 p-12 text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-red-400 mb-4">Error Loading Data</h2>
+              <p className="text-stone-300 mb-4">
+                {error}
+              </p>
+              <button
+                onClick={fetchHistoricalMetrics}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           ) : metricsData.length === 0 ? (
             <div className="bg-stone-800 border-4 border-stone-700 p-12 text-center">

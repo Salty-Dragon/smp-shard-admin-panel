@@ -29,6 +29,21 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       if (customStart && customEnd) {
         startDate = new Date(customStart as string);
         endDate = new Date(customEnd as string);
+        
+        // Validate dates
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({
+            error: 'Invalid date format',
+            message: 'Start date and end date must be valid ISO 8601 date strings'
+          });
+        }
+        
+        if (startDate > endDate) {
+          return res.status(400).json({
+            error: 'Invalid date range',
+            message: 'Start date must be before end date'
+          });
+        }
       } else {
         switch (timeRange) {
           case '7d':
@@ -62,11 +77,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       if (metrics.length === 0) {
         return res.status(200).json({ 
           metrics: [],
-          message: 'No historical data available. Metrics will be collected over time.'
+          message: 'No historical data available for the selected time range. Note: The limit is set to ' + limit + ' records. For large time ranges, consider using a shorter period or implementing data aggregation.'
         });
       }
 
-      return res.status(200).json({ metrics });
+      return res.status(200).json({ 
+        metrics,
+        count: metrics.length,
+        message: metrics.length >= parseInt(limit as string) 
+          ? `Showing first ${limit} records. For complete data, consider using a shorter time range or implementing pagination.`
+          : undefined
+      });
     } catch (error) {
       console.error('Error fetching historical metrics:', error);
       return res.status(500).json({ error: 'Internal server error' });
