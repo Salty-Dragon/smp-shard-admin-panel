@@ -13,6 +13,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import packageJson from '../../package.json';
+import ErrorReportModal from '@/components/ErrorReportModal';
+import ServerMonitoringPanel from '@/components/ServerMonitoringPanel';
+import Toast from '@/components/Toast';
+import Spinner from '@/components/Spinner';
 
 interface DashboardProps {
   user: {
@@ -39,14 +43,31 @@ interface ActivityLog {
   };
 }
 
+interface ErrorReport {
+  id: string;
+  title: string;
+  severity: string;
+  status: string;
+  createdAt: string;
+  user: {
+    name: string;
+  };
+}
+
 export default function Dashboard({ user, version }: DashboardProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
+  const [errorReports, setErrorReports] = useState<ErrorReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showErrorReportModal, setShowErrorReportModal] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
 
   useEffect(() => {
     fetchRecentActivity();
+    if (user.role === 'Super Admin') {
+      fetchErrorReports();
+    }
   }, []);
 
   const fetchRecentActivity = async () => {
@@ -60,6 +81,25 @@ export default function Dashboard({ user, version }: DashboardProps) {
       console.error('Error fetching recent activity:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchErrorReports = async () => {
+    try {
+      const response = await fetch('/apanel44/api/error-reports?status=open&limit=5');
+      if (response.ok) {
+        const data = await response.json();
+        setErrorReports(data.errorReports || []);
+      }
+    } catch (error) {
+      console.error('Error fetching error reports:', error);
+    }
+  };
+
+  const handleErrorReportSuccess = () => {
+    setToast({ message: 'Error report submitted successfully', type: 'success' });
+    if (user.role === 'Super Admin') {
+      fetchErrorReports();
     }
   };
 
@@ -115,6 +155,13 @@ export default function Dashboard({ user, version }: DashboardProps) {
             </div>
 
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowErrorReportModal(true)}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 border-b-4 border-yellow-800 active:border-b-0 active:mt-1 font-semibold"
+                title="Submit Error Report"
+              >
+                🐛 Report Issue
+              </button>
               <div className="text-right">
                 <p className="text-white font-semibold">{user.name}</p>
                 <p className="text-stone-400 text-sm">{user.role}</p>
@@ -161,6 +208,22 @@ export default function Dashboard({ user, version }: DashboardProps) {
                   className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
                 >
                   📋 Logs
+                </Link>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/error-reports"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🐛 Error Reports
+                </Link>
+              )}
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <Link
+                  href="/scheduled-tasks"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  ⏰ Tasks
                 </Link>
               )}
               <Link
@@ -215,9 +278,81 @@ export default function Dashboard({ user, version }: DashboardProps) {
                   </div>
                   <div className="text-stone-400 text-sm mt-1">Server Status</div>
                 </div>
+                {user.role === 'Super Admin' && (
+                  <>
+                    <div className="bg-stone-900 border-2 border-stone-700 p-4 text-center">
+                      <div className="text-3xl font-bold text-yellow-400">
+                        {errorReports.length}
+                      </div>
+                      <div className="text-stone-400 text-sm mt-1">Open Reports</div>
+                    </div>
+                    <Link
+                      href="/error-reports"
+                      className="bg-stone-900 border-2 border-stone-700 hover:border-green-600 p-4 text-center transition-all"
+                    >
+                      <div className="text-3xl font-bold text-green-400">
+                        →
+                      </div>
+                      <div className="text-stone-400 text-sm mt-1">View All</div>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Server Monitoring Panel (Admin/Super Admin only) */}
+          {(user.role === 'Super Admin' || user.role === 'Admin') && (
+            <div className="mt-6">
+              <ServerMonitoringPanel />
+            </div>
+          )}
+
+          {/* Error Reports Widget (Super Admin only) */}
+          {user.role === 'Super Admin' && errorReports.length > 0 && (
+            <div className="mt-6 bg-stone-800 border-4 border-stone-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-yellow-400">
+                  🐛 Recent Error Reports
+                </h2>
+                <Link
+                  href="/error-reports"
+                  className="text-green-400 hover:text-green-300 font-semibold"
+                >
+                  View All →
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {errorReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="bg-stone-900 border-2 border-stone-700 p-4 flex items-center justify-between"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <span className={`text-2xl ${
+                        report.severity === 'critical' ? '🔴' :
+                        report.severity === 'high' ? '🟠' :
+                        report.severity === 'medium' ? '🟡' : '🟢'
+                      }`}>
+                        {report.severity === 'critical' ? '🔴' :
+                         report.severity === 'high' ? '🟠' :
+                         report.severity === 'medium' ? '🟡' : '🟢'}
+                      </span>
+                      <div>
+                        <p className="text-white font-semibold">{report.title}</p>
+                        <p className="text-stone-500 text-sm">
+                          Reported by {report.user.name} • {new Date(report.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-stone-400 text-sm uppercase">
+                      {report.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Recent Activity Feed */}
           <div className="mt-6 bg-stone-800 border-4 border-stone-700 p-6">
@@ -226,8 +361,8 @@ export default function Dashboard({ user, version }: DashboardProps) {
             </h2>
             
             {loading ? (
-              <div className="text-center py-8 text-stone-400">
-                Loading activity...
+              <div className="text-center py-8">
+                <Spinner size="large" message="Loading activity..." />
               </div>
             ) : recentActivity.length === 0 ? (
               <div className="text-center py-8 text-stone-400">
@@ -293,6 +428,22 @@ export default function Dashboard({ user, version }: DashboardProps) {
           </div>
         </footer>
       </div>
+
+      {/* Error Report Modal */}
+      <ErrorReportModal
+        isOpen={showErrorReportModal}
+        onClose={() => setShowErrorReportModal(false)}
+        onSuccess={handleErrorReportSuccess}
+      />
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </>
   );
 }

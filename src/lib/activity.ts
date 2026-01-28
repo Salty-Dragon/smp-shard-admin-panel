@@ -9,6 +9,7 @@ import { NextApiRequest } from 'next';
 
 export type ActionType =
   | 'login'
+  | 'login_failed'
   | 'logout'
   | 'create_user'
   | 'update_user'
@@ -23,8 +24,19 @@ export type ActionType =
   | 'server_start'
   | 'server_stop'
   | 'server_restart'
+  | 'server_config_update'
+  | 'server_status_change'
   | 'config_update'
-  | 'player_action';
+  | 'player_action'
+  | '2fa_enabled'
+  | '2fa_disabled'
+  | '2fa_failed'
+  | '2fa_method_changed'
+  | 'create_error_report'
+  | 'update_error_report'
+  | 'create_scheduled_task'
+  | 'update_scheduled_task'
+  | 'delete_scheduled_task';
 
 export interface LogActivityParams {
   userId: string;

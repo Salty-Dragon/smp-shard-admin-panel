@@ -127,7 +127,7 @@ export default function UsersPage({ user }: UsersPageProps) {
         updateData.password = formData.password;
       }
 
-      const response = await fetch(`/api/users/${editingUser.id}`, {
+      const response = await fetch(`/apanel44/api/users/${editingUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData),
@@ -151,7 +151,7 @@ export default function UsersPage({ user }: UsersPageProps) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/apanel44/api/users/${userId}`, {
         method: 'DELETE',
       });
 
