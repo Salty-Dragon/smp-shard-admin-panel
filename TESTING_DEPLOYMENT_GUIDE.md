@@ -110,10 +110,10 @@ The metrics API (`/api/monitoring/metrics`) collects live metrics on every call.
      -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
    ```
    
-   Run this command multiple times over a period of 10-15 minutes to collect several data points:
+   Run this command 5-10 times, waiting 2 minutes between each execution, to collect several data points:
    ```bash
-   # Collect a data point every 2 minutes (run this 5-10 times manually)
-   # Wait 2 minutes between each run
+   # Collect a data point - repeat this command manually
+   # Wait 2 minutes between each execution
    curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true \
      -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
    ```
@@ -142,7 +142,7 @@ The metrics API (`/api/monitoring/metrics`) collects live metrics on every call.
 
 **For Production - Continuous Data Collection:**
 
-Set up automated collection using a cron job (see "Production Deployment" section, lines 189-198). This will continuously save metrics every 5 minutes for ongoing historical tracking.
+Set up automated collection using a cron job (see the "Production Deployment" section below). This will continuously save metrics every 5 minutes for ongoing historical tracking.
 
 **Expected Results:**
 - Three charts visible: **CPU Usage Trend**, **Memory Usage Trend**, and **Player Count Trend**

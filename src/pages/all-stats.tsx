@@ -172,7 +172,7 @@ export default function AllStats({ user }: AllStatsProps) {
                   parameter:
                 </p>
                 <code className="bg-stone-900 px-3 py-2 rounded block text-xs text-left max-w-2xl mx-auto overflow-x-auto">
-                  curl /apanel44/api/monitoring/metrics?saveHistory=true
+                  curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true
                 </code>
                 <p className="pt-2">
                   For continuous collection, set up a cron job (see{' '}
