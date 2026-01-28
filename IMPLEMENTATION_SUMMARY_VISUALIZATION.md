@@ -8,7 +8,7 @@ This implementation adds comprehensive historical data visualization capabilitie
 
 ### 1. Backend Enhancements
 
-#### New API Endpoint: `/api/monitoring/collect`
+#### New API Endpoint: `/apanel44/api/monitoring/collect`
 - **Purpose**: Automated metrics collection endpoint
 - **Authentication**: Token-based (METRICS_COLLECTION_TOKEN)
 - **Usage**: Designed to be called by cron jobs or schedulers
@@ -18,14 +18,14 @@ This implementation adds comprehensive historical data visualization capabilitie
   - Returns success/failure status
   - Comprehensive error handling
 
-#### Enhanced API Endpoint: `/api/monitoring/history`
+#### Enhanced API Endpoint: `/apanel44/api/monitoring/history`
 - **New Features**:
   - Support for custom date ranges
   - Input validation for dates
   - Better error messages
   - Data limit warnings for large datasets
 
-#### Enhanced API Endpoint: `/api/monitoring/metrics`
+#### Enhanced API Endpoint: `/apanel44/api/monitoring/metrics`
 - **New Features**:
   - Disk usage collection
   - Server online/offline status
@@ -34,7 +34,7 @@ This implementation adds comprehensive historical data visualization capabilitie
 
 #### New Utility: `src/lib/metrics.ts`
 - Centralized metrics collection logic
-- Used by both `/api/monitoring/metrics` and `/api/monitoring/collect`
+- Used by both `/apanel44/api/monitoring/metrics` and `/apanel44/api/monitoring/collect`
 - Eliminates code duplication
 - Easy to maintain and extend
 
