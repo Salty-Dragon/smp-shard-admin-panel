@@ -542,8 +542,54 @@ Both methods can be configured per user for enhanced security.
 
 ## 📚 API Routes
 
-- `GET /api/health` - Health check endpoint
-- More API routes will be added as features are implemented
+All API routes are prefixed with `/apanel44` (the application's basePath):
+
+- `GET /apanel44/api/health` - Health check endpoint
+- `GET /apanel44/api/monitoring/metrics` - Server metrics (CPU, memory, player count)
+- `GET /apanel44/api/monitoring/server-status` - Minecraft server status and player count
+- `GET /apanel44/api/monitoring/history` - Historical metrics data
+- More API routes documented in component README files
+
+## 🎮 Minecraft Server Integration
+
+The panel integrates with Minecraft servers to provide real-time statistics:
+
+### Server Status Monitoring
+- **Real-time status**: Online/Offline detection via tmux session checking
+- **Player count**: Accurate player count from server console
+- **Auto-refresh**: Updates every 10 seconds
+
+### Configuration
+
+Set up your Minecraft server connection in `.env`:
+
+```env
+# Minecraft Server Configuration
+MINECRAFT_SERVER_SESSION="minecraft-server"
+```
+
+This should match the name of the tmux session running your Minecraft server.
+
+### How It Works
+
+1. **Status Check**: Verifies tmux session exists using `tmux has-session`
+2. **Player Count**: Sends "list" command to server console
+3. **Output Parsing**: Extracts player count from console output
+4. **Error Handling**: Returns offline status if session doesn't exist
+
+For detailed information, see [SERVER_STATUS_IMPLEMENTATION.md](./SERVER_STATUS_IMPLEMENTATION.md)
+
+### Troubleshooting
+
+**Server shows as offline but it's running:**
+- Verify `MINECRAFT_SERVER_SESSION` matches your actual tmux session name
+- Run `tmux ls` to see all session names
+- Ensure the Node.js process has permission to check tmux sessions
+
+**Player count always 0:**
+- Check server logs to verify "list" command output format
+- Increase timeout in `src/lib/minecraft.ts` if server is slow to respond
+- Review logs for parsing errors: `[Minecraft] Raw output received...`
 
 ## 🧪 Development
 
