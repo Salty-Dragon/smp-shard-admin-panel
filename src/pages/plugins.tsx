@@ -172,40 +172,14 @@ export default function Plugins({ user }: PluginsProps) {
     }
   };
 
-  const handleEditFile = async (file: FileInfo) => {
-    // Check if file is editable
-    if (!EDITABLE_EXTENSIONS.includes(file.extension)) {
-      setToast({ message: 'This file type cannot be edited', type: 'error' });
-      return;
-    }
-
-    try {
-      const url = currentPath 
-        ? `/apanel44/api/files/${encodeURIComponent(file.name)}?path=${encodeURIComponent(currentPath)}`
-        : `/apanel44/api/files/${encodeURIComponent(file.name)}`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setEditedContent(data.content);
-        setSelectedFile(file);
-        setShowEditModal(true);
-      } else {
-        const data = await response.json().catch(() => ({ message: 'Failed to load file' }));
-        setToast({ message: data.message || 'Failed to load file', type: 'error' });
-      }
-    } catch (error) {
-      console.error('Error loading file:', error);
-      setToast({ message: 'Error loading file', type: 'error' });
-    }
-  };
-
   const handleSaveFile = async () => {
     if (!selectedFile) return;
 
     try {
       setIsSaving(true);
-      const url = currentPath 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+      const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
+      const url = pathToUse 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
         : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
       const response = await fetch(url, {
         method: 'PUT',
@@ -238,8 +212,9 @@ export default function Plugins({ user }: PluginsProps) {
 
     try {
       setIsRenaming(true);
-      const url = currentPath 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+      const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
+      const url = pathToUse 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
         : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
       const response = await fetch(url, {
         method: 'PUT',
@@ -272,8 +247,9 @@ export default function Plugins({ user }: PluginsProps) {
 
     try {
       setIsDeleting(true);
-      const url = currentPath 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+      const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
+      const url = pathToUse 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
         : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
       const response = await fetch(url, {
         method: 'DELETE',
@@ -296,49 +272,83 @@ export default function Plugins({ user }: PluginsProps) {
     }
   };
 
-  const openRenameModal = (file: FileInfo) => {
-    setSelectedFile(file);
-    setNewFileName(file.name);
+  // Wrapper functions for nested file operations
+  const handleEditFileWithPath = async (fileWithPath: FileInfo & { _relativePath?: string }) => {
+    const pathToUse = fileWithPath._relativePath || currentPath;
+    
+    // Check if file is editable
+    if (!EDITABLE_EXTENSIONS.includes(fileWithPath.extension)) {
+      setToast({ message: 'This file type cannot be edited', type: 'error' });
+      return;
+    }
+
+    try {
+      const url = pathToUse 
+        ? `/apanel44/api/files/${encodeURIComponent(fileWithPath.name)}?path=${encodeURIComponent(pathToUse)}`
+        : `/apanel44/api/files/${encodeURIComponent(fileWithPath.name)}`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setEditedContent(data.content);
+        // Store the file with its path info
+        setSelectedFile({ ...fileWithPath, _relativePath: pathToUse } as FileInfo);
+        setShowEditModal(true);
+      } else {
+        const data = await response.json().catch(() => ({ message: 'Failed to load file' }));
+        setToast({ message: data.message || 'Failed to load file', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error loading file:', error);
+      setToast({ message: 'Error loading file', type: 'error' });
+    }
+  };
+
+  const openRenameModalWithPath = (fileWithPath: FileInfo & { _relativePath?: string }) => {
+    // Store the file with its path info
+    setSelectedFile({ ...fileWithPath, _relativePath: fileWithPath._relativePath || currentPath } as FileInfo);
+    setNewFileName(fileWithPath.name);
     setShowRenameModal(true);
   };
 
-  const openDeleteModal = (file: FileInfo) => {
-    setSelectedFile(file);
+  const openDeleteModalWithPath = (fileWithPath: FileInfo & { _relativePath?: string }) => {
+    // Store the file with its path info
+    setSelectedFile({ ...fileWithPath, _relativePath: fileWithPath._relativePath || currentPath } as FileInfo);
     setShowDeleteModal(true);
   };
 
-  const navigateToFolder = (folderName: string) => {
-    const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-    fetchFiles(newPath);
+  const navigateToFolder = (folderPath: string) => {
+    fetchFiles(folderPath);
+    // Clear expanded folders when navigating to avoid stale data
+    setExpandedFolders({});
   };
 
-  const toggleFolder = async (folderName: string, event?: React.MouseEvent) => {
+  const toggleFolder = async (folderPath: string, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
     }
     
-    const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-    
     // If folder is already expanded, collapse it
     if (expandedFolders[folderPath]) {
-      const newExpanded = { ...expandedFolders };
-      delete newExpanded[folderPath];
-      setExpandedFolders(newExpanded);
+      setExpandedFolders(prev => {
+        const newExpanded = { ...prev };
+        delete newExpanded[folderPath];
+        return newExpanded;
+      });
       return;
     }
     
     // Otherwise, fetch and expand the folder
     try {
-      setLoadingFolders(new Set([...loadingFolders, folderPath]));
+      setLoadingFolders(prev => new Set([...prev, folderPath]));
       const url = `/apanel44/api/files?path=${encodeURIComponent(folderPath)}`;
       const response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
-        setExpandedFolders({
-          ...expandedFolders,
+        setExpandedFolders(prev => ({
+          ...prev,
           [folderPath]: data.files || [],
-        });
+        }));
       } else {
         const errorData = await response.json().catch(() => ({ message: 'Failed to load folder' }));
         setToast({ message: errorData.message || 'Failed to load folder', type: 'error' });
@@ -347,9 +357,11 @@ export default function Plugins({ user }: PluginsProps) {
       console.error('Error loading folder:', error);
       setToast({ message: 'Error loading folder', type: 'error' });
     } finally {
-      const newLoading = new Set(loadingFolders);
-      newLoading.delete(folderPath);
-      setLoadingFolders(newLoading);
+      setLoadingFolders(prev => {
+        const newLoading = new Set(prev);
+        newLoading.delete(folderPath);
+        return newLoading;
+      });
     }
   };
 
@@ -416,26 +428,32 @@ export default function Plugins({ user }: PluginsProps) {
   };
 
   // Recursive render function for files with nested folders
-  const renderFileRow = (file: FileInfo, depth: number = 0, parentPath: string = ''): React.JSX.Element[] => {
+  const renderFileRow = (file: FileInfo, depth: number = 0, parentPath: string = '', rowIndex: number = 0): React.JSX.Element[] => {
     const rows: React.JSX.Element[] = [];
     const filePath = parentPath ? `${parentPath}/${file.name}` : (currentPath ? `${currentPath}/${file.name}` : file.name);
     const isExpanded = !!expandedFolders[filePath];
     const isLoadingFolder = loadingFolders.has(filePath);
-    const indentClass = depth > 0 ? `pl-${depth * 8}` : '';
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 2}rem` } : {};
+    
+    // Create a file object with path info for operations on nested files
+    const fileWithPath = { 
+      ...file, 
+      // Store the relative path from currentPath for API calls
+      _relativePath: parentPath || currentPath
+    };
 
     rows.push(
       <tr
-        key={filePath}
+        key={`${filePath}-${depth}-${rowIndex}`}
         className={`border-b-2 border-stone-700 ${
-          depth % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
+          rowIndex % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
         }`}
       >
         <td className="p-3" style={indentStyle}>
           {file.isDirectory ? (
             <div className="flex items-center space-x-2">
               <button
-                onClick={(e) => toggleFolder(file.name, e)}
+                onClick={(e) => toggleFolder(filePath, e)}
                 className="text-green-400 hover:text-green-300 font-bold text-xl w-6 flex items-center justify-center"
                 aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
                 disabled={isLoadingFolder}
@@ -443,7 +461,7 @@ export default function Plugins({ user }: PluginsProps) {
                 {isLoadingFolder ? '⏳' : isExpanded ? '−' : '+'}
               </button>
               <button
-                onClick={() => navigateToFolder(file.name)}
+                onClick={() => navigateToFolder(filePath)}
                 className="flex items-center space-x-2 hover:text-green-400 transition-colors"
                 title="Navigate into folder"
               >
@@ -467,7 +485,7 @@ export default function Plugins({ user }: PluginsProps) {
           <div className="flex items-center justify-end space-x-2">
             {isEditable(file) && (
               <button
-                onClick={() => handleEditFile(file)}
+                onClick={() => handleEditFileWithPath(fileWithPath)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
                 title="Edit file"
                 aria-label={`Edit ${file.name}`}
@@ -476,7 +494,7 @@ export default function Plugins({ user }: PluginsProps) {
               </button>
             )}
             <button
-              onClick={() => openRenameModal(file)}
+              onClick={() => openRenameModalWithPath(fileWithPath)}
               className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
               title="Rename file"
               aria-label={`Rename ${file.name}`}
@@ -484,7 +502,7 @@ export default function Plugins({ user }: PluginsProps) {
               ✏️ Rename
             </button>
             <button
-              onClick={() => openDeleteModal(file)}
+              onClick={() => openDeleteModalWithPath(fileWithPath)}
               className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
               title="Delete file"
               aria-label={`Delete ${file.name}`}
@@ -498,8 +516,11 @@ export default function Plugins({ user }: PluginsProps) {
 
     // If folder is expanded, render its contents
     if (isExpanded && expandedFolders[filePath]) {
+      let childRowIndex = rowIndex + 1;
       expandedFolders[filePath].forEach((childFile) => {
-        rows.push(...renderFileRow(childFile, depth + 1, filePath));
+        const childRows = renderFileRow(childFile, depth + 1, filePath, childRowIndex);
+        rows.push(...childRows);
+        childRowIndex += childRows.length;
       });
     }
 
@@ -750,7 +771,7 @@ export default function Plugins({ user }: PluginsProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {files.flatMap((file) => renderFileRow(file, 0, ''))}
+                    {files.flatMap((file, index) => renderFileRow(file, 0, '', index))}
                   </tbody>
                 </table>
               </div>
