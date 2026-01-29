@@ -84,7 +84,7 @@ Real-time server monitoring with automatic refresh every 10 seconds.
 - Progress bars for visual representation of usage
 
 **API Endpoint:**
-- `GET /api/monitoring/metrics` - Fetch current server metrics (Admin/Super Admin only)
+- `GET /apanel44/api/monitoring/metrics` - Fetch current server metrics (Admin/Super Admin only)
 
 **Database Schema (for historical tracking):**
 ```prisma

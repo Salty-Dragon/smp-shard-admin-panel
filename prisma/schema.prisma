@@ -198,5 +198,26 @@ model ServerMetrics {
   // Timestamp
   timestamp         DateTime @default(now())
   
+  // Aggregation marker - if true, this is aggregated data
+  isAggregated      Boolean  @default(false)
+  aggregationPeriod String?  // 'hourly', 'daily', null for raw data
+  
   @@index([timestamp])
+  @@index([timestamp, isAggregated])
+  @@index([isAggregated, aggregationPeriod])
+}
+
+// Settings model for system configuration
+model Settings {
+  id                String   @id @default(uuid())
+  key               String   @unique // Setting key identifier
+  value             String   @db.Text // Setting value (stored as JSON string)
+  category          String   @default("general") // 'metrics', 'general', 'security', etc.
+  description       String?  @db.Text // Human-readable description
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([category])
 }

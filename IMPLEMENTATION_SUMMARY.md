@@ -177,7 +177,7 @@ See [SECURITY_REVIEW.md](./SECURITY_REVIEW.md) for detailed security analysis.
 - `DELETE /api/scheduled-tasks/[id]` - Delete scheduled task (Admin/Super Admin)
 
 ### Monitoring
-- `GET /api/monitoring/metrics` - Get server metrics (Admin/Super Admin)
+- `GET /apanel44/api/monitoring/metrics` - Get server metrics (Admin/Super Admin)
 
 ## 📦 Dependencies
 
