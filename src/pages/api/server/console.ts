@@ -6,31 +6,11 @@
  */
 
 import { NextApiResponse } from 'next';
-import { withPermission, AuthenticatedRequest } from '@/lib/middleware';
+import { withAdmin, AuthenticatedRequest } from '@/lib/middleware';
 import { sendCommandAndCapture, tmuxSessionExists } from '@/lib/console';
 import { logActivity } from '@/lib/activity';
 import prisma from '@/lib/prisma';
-
-// List of commands that Admins (non-Super Admins) are allowed to execute
-const ADMIN_ALLOWED_COMMANDS = [
-  'list',
-  'whitelist',
-  'ban',
-  'pardon',
-  'kick',
-  'tp',
-  'give',
-  'gamemode',
-  'time',
-  'weather',
-  'difficulty',
-  'seed',
-  'say',
-  'tell',
-  'msg',
-  'w',
-  'help',
-];
+import { ADMIN_ALLOWED_COMMANDS, MAX_COMMAND_LENGTH } from '@/lib/console-constants';
 
 /**
  * Check if a command is allowed for the given user role
@@ -40,6 +20,14 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
   
   if (!trimmedCommand) {
     return { allowed: false, reason: 'Command cannot be empty' };
+  }
+
+  // Check command length
+  if (trimmedCommand.length > MAX_COMMAND_LENGTH) {
+    return { 
+      allowed: false, 
+      reason: `Command exceeds maximum length of ${MAX_COMMAND_LENGTH} characters` 
+    };
   }
 
   // Super Admins can execute any command
@@ -222,13 +210,24 @@ async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
     ]);
 
     // Parse details JSON for each log
-    const parsedLogs = logs.map(log => ({
-      id: log.id,
-      user: log.user,
-      timestamp: log.timestamp,
-      ipAddress: log.ipAddress,
-      details: log.details ? JSON.parse(log.details) : null
-    }));
+    const parsedLogs = logs.map(log => {
+      let details = null;
+      if (log.details) {
+        try {
+          details = JSON.parse(log.details);
+        } catch (e) {
+          console.error('Failed to parse log details:', e);
+          details = { error: 'Failed to parse details' };
+        }
+      }
+      return {
+        id: log.id,
+        user: log.user,
+        timestamp: log.timestamp,
+        ipAddress: log.ipAddress,
+        details
+      };
+    });
 
     return res.status(200).json({
       logs: parsedLogs,
@@ -250,8 +249,9 @@ async function handleGet(req: AuthenticatedRequest, res: NextApiResponse) {
 
 /**
  * API Route Handler
+ * Only Admins and Super Admins can access this endpoint
  */
-export default withPermission('server', 'write', async (req: AuthenticatedRequest, res: NextApiResponse) => {
+export default withAdmin(async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     return handlePost(req, res);
   } else if (req.method === 'GET') {

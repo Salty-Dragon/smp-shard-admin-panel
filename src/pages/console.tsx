@@ -6,11 +6,14 @@
 import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { signOut } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/router';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import { ADMIN_ALLOWED_COMMANDS } from '@/lib/console-constants';
 
 interface ConsolePageProps {
   user: {
@@ -50,13 +53,8 @@ interface CommandResult {
   message?: string;
 }
 
-const ADMIN_ALLOWED_COMMANDS = [
-  'list', 'whitelist', 'ban', 'pardon', 'kick', 'tp', 'give', 
-  'gamemode', 'time', 'weather', 'difficulty', 'seed', 'say', 
-  'tell', 'msg', 'w', 'help'
-];
-
 export default function ConsolePage({ user }: ConsolePageProps) {
+  const router = useRouter();
   const [command, setCommand] = useState('');
   const [executing, setExecuting] = useState(false);
   const [commandOutput, setCommandOutput] = useState<CommandResult[]>([]);
@@ -87,7 +85,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
       const baseCommand = command.trim().split(/\s+/)[0].toLowerCase();
       const availableCommands = user.role === 'Super Admin' 
         ? [...ADMIN_ALLOWED_COMMANDS, 'stop', 'restart', 'save-all', 'op', 'deop', 'plugins', 'reload']
-        : ADMIN_ALLOWED_COMMANDS;
+        : [...ADMIN_ALLOWED_COMMANDS];
       
       const filtered = availableCommands.filter(cmd => 
         cmd.startsWith(baseCommand) && cmd !== baseCommand
@@ -99,15 +97,28 @@ export default function ConsolePage({ user }: ConsolePageProps) {
     }
   }, [command, user.role]);
 
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/login' });
+  };
+
   const fetchCommandHistory = async () => {
     try {
       const response = await fetch('/apanel44/api/server/console?limit=20');
       if (response.ok) {
         const data = await response.json();
         setCommandHistory(data.logs);
+      } else {
+        setToast({
+          message: 'Failed to load command history',
+          type: 'warning'
+        });
       }
     } catch (error) {
       console.error('Error fetching command history:', error);
+      setToast({
+        message: 'Error loading command history',
+        type: 'error'
+      });
     } finally {
       setLoadingHistory(false);
     }
@@ -208,28 +219,116 @@ export default function ConsolePage({ user }: ConsolePageProps) {
 
       <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
         {/* Header */}
-        <header className="bg-stone-900/80 border-b-4 border-green-600">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between">
+        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">⛏️</span>
               <div>
-                <h1 className="text-4xl font-bold text-green-400">⌨️ Server Console</h1>
-                <p className="text-stone-400 mt-2">Execute commands on the Minecraft server</p>
+                <h1 className="text-2xl font-bold text-green-400" style={{ 
+                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
+                }}>
+                  SMP Admin Panel
+                </h1>
+                <p className="text-stone-400 text-sm">Server Management System</p>
               </div>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/dashboard"
-                  className="bg-stone-700 hover:bg-stone-600 text-white px-4 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
-                >
-                  ← Back
-                </Link>
-                <div className="text-right">
-                  <p className="text-white font-semibold">{user.name}</p>
-                  <p className="text-stone-400 text-sm">{user.role}</p>
-                </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-white font-semibold">{user.name}</p>
+                <p className="text-stone-400 text-sm">{user.role}</p>
               </div>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </header>
+
+        {/* Navigation */}
+        <nav className="bg-stone-800/50 border-b-2 border-stone-700">
+          <div className="container mx-auto px-4">
+            <div className="flex space-x-1">
+              <Link
+                href="/dashboard"
+                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+              >
+                📊 Dashboard
+              </Link>
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <>
+                  <Link
+                    href="/users"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    👥 Users
+                  </Link>
+                  <Link
+                    href="/console"
+                    className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
+                  >
+                    ⌨️ Console
+                  </Link>
+                  <Link
+                    href="/plugins"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    🔌 Plugins
+                  </Link>
+                </>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/roles"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🛡️ Roles
+                </Link>
+              )}
+              {(user.role === 'Super Admin' || user.role === 'Moderator') && (
+                <Link
+                  href="/logs"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  📋 Logs
+                </Link>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/error-reports"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🐛 Error Reports
+                </Link>
+              )}
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <Link
+                  href="/scheduled-tasks"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  ⏰ Tasks
+                </Link>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/metrics-settings"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  ⚙️ Metrics
+                </Link>
+              )}
+              <Link
+                href="/2fa-setup"
+                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+              >
+                🔐 2FA Setup
+              </Link>
+            </div>
+          </div>
+        </nav>
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
@@ -249,7 +348,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                     </p>
                     {user.role !== 'Super Admin' && (
                       <p className="text-blue-200 text-sm">
-                        Allowed commands: {ADMIN_ALLOWED_COMMANDS.join(', ')}
+                        Allowed commands: {[...ADMIN_ALLOWED_COMMANDS].join(', ')}
                       </p>
                     )}
                   </div>
