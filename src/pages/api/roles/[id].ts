@@ -52,7 +52,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       });
 
       // Create new permissions
-      const permissionPromises = permissions.map((perm: any) => {
+      const permissionPromises = permissions.map((perm: { resource: string; action: string }) => {
         return prisma.permission.create({
           data: {
             roleId: id,
