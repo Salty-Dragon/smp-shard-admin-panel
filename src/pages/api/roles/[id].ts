@@ -32,10 +32,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(404).json({ error: 'Role not found' });
       }
 
-      // Don't allow modifying Super Admin permissions
+      // Only allow modifying Admin and Moderator permissions
       if (role.name === 'Super Admin') {
         return res.status(400).json({ 
           error: 'Cannot modify Super Admin permissions' 
+        });
+      }
+
+      // Ensure only Admin and Moderator can be modified
+      if (role.name !== 'Admin' && role.name !== 'Moderator') {
+        return res.status(400).json({
+          error: 'Only Admin and Moderator roles can be modified'
         });
       }
 

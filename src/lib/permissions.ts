@@ -13,6 +13,53 @@ export type ResourceType = 'logs' | 'users' | 'roles' | 'dashboard' | 'server' |
 export type ActionType = 'read' | 'write' | 'delete' | 'manage';
 
 /**
+ * Available permission definition
+ */
+export interface PermissionDefinition {
+  resource: ResourceType;
+  action: ActionType;
+  description: string;
+}
+
+/**
+ * All available permissions in the system
+ * These define what permissions can be assigned to roles
+ */
+export const AVAILABLE_PERMISSIONS: PermissionDefinition[] = [
+  // Dashboard permissions
+  { resource: 'dashboard', action: 'read', description: 'View dashboard and statistics' },
+  
+  // Logs permissions
+  { resource: 'logs', action: 'read', description: 'View activity logs' },
+  { resource: 'logs', action: 'delete', description: 'Delete activity logs' },
+  
+  // Users permissions
+  { resource: 'users', action: 'read', description: 'View user list and details' },
+  { resource: 'users', action: 'write', description: 'Create and edit users' },
+  { resource: 'users', action: 'delete', description: 'Delete users' },
+  { resource: 'users', action: 'manage', description: 'Full user management (includes role assignment)' },
+  
+  // Roles permissions
+  { resource: 'roles', action: 'read', description: 'View roles and permissions' },
+  { resource: 'roles', action: 'write', description: 'Edit role permissions' },
+  { resource: 'roles', action: 'manage', description: 'Full role management' },
+  
+  // Server permissions
+  { resource: 'server', action: 'read', description: 'View server status and information' },
+  { resource: 'server', action: 'write', description: 'Execute server commands and control server' },
+  { resource: 'server', action: 'manage', description: 'Full server management including start/stop' },
+  
+  // Files permissions
+  { resource: 'files', action: 'read', description: 'View and download files' },
+  { resource: 'files', action: 'write', description: 'Upload and edit files' },
+  { resource: 'files', action: 'delete', description: 'Delete files' },
+  
+  // Permissions permissions
+  { resource: 'permissions', action: 'read', description: 'View permission configuration' },
+  { resource: 'permissions', action: 'manage', description: 'Manage role permissions' },
+];
+
+/**
  * Check if a user has a specific permission
  * 
  * @param userId - User's ID
