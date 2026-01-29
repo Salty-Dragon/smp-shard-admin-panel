@@ -8,7 +8,7 @@ import prisma from './prisma';
 
 export type RoleName = 'Super Admin' | 'Admin' | 'Moderator';
 
-export type ResourceType = 'logs' | 'users' | 'roles' | 'dashboard' | 'server' | 'permissions';
+export type ResourceType = 'logs' | 'users' | 'roles' | 'dashboard' | 'server' | 'permissions' | 'files';
 
 export type ActionType = 'read' | 'write' | 'delete' | 'manage';
 

@@ -36,7 +36,12 @@ export type ActionType =
   | 'update_error_report'
   | 'create_scheduled_task'
   | 'update_scheduled_task'
-  | 'delete_scheduled_task';
+  | 'delete_scheduled_task'
+  | 'upload_file'
+  | 'edit_file'
+  | 'rename_file'
+  | 'delete_file'
+  | 'list_files';
 
 export interface LogActivityParams {
   userId: string;
