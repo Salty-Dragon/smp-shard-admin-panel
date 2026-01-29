@@ -7,10 +7,10 @@
 
 import { NextApiResponse } from 'next';
 import { withAdmin, AuthenticatedRequest } from '@/lib/middleware';
-import { sendCommandAndCapture, tmuxSessionExists } from '@/lib/console';
+import { sendCommandAndCapture, tmuxSessionExists, executeScriptInTmux, restartServer } from '@/lib/console';
 import { logActivity } from '@/lib/activity';
 import prisma from '@/lib/prisma';
-import { ADMIN_ALLOWED_COMMANDS, MAX_COMMAND_LENGTH, BLOCKED_COMMANDS, BLOCKED_COMMAND_MESSAGES } from '@/lib/console-constants';
+import { ADMIN_ALLOWED_COMMANDS, MAX_COMMAND_LENGTH, SPECIAL_COMMANDS } from '@/lib/console-constants';
 
 /**
  * Check if a command is allowed for the given user role
@@ -33,32 +33,19 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
   // Extract the base command (first word)
   const baseCommand = trimmedCommand.split(/\s+/)[0].toLowerCase();
 
-  // Check if command is blocked for ALL users (including Super Admins)
-  // These commands break the tmux session connection
-  const isBlocked = BLOCKED_COMMANDS.some(
-    blockedCmd => baseCommand === blockedCmd.toLowerCase()
-  );
-
-  if (isBlocked) {
-    const message = BLOCKED_COMMAND_MESSAGES[baseCommand] || 
-      'This command is blocked because it can break the web console connection.';
-    return {
-      allowed: false,
-      reason: message
-    };
-  }
-
-  // Super Admins can execute any command (except blocked ones)
+  // Super Admins can execute any command
   if (userRole === 'Super Admin') {
     return { allowed: true };
   }
 
   // For Admins, check if the command is in the allowed list
+  // Special commands (start, restart) are also allowed for Admins
+  const isSpecialCommand = Object.keys(SPECIAL_COMMANDS).includes(baseCommand);
   const isAllowed = ADMIN_ALLOWED_COMMANDS.some(
     allowedCmd => baseCommand === allowedCmd.toLowerCase()
   );
 
-  if (!isAllowed) {
+  if (!isAllowed && !isSpecialCommand) {
     return {
       allowed: false,
       reason: `Command '${baseCommand}' is not allowed for Admin role. Only Super Admins can execute this command.`
@@ -117,8 +104,23 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       });
     }
 
-    // Execute the command and capture output
-    const output = await sendCommandAndCapture(serverSession, command);
+    // Extract base command to check if it's a special command
+    const baseCommand = command.trim().split(/\s+/)[0].toLowerCase();
+    let output = '';
+    
+    // Handle special commands
+    if (baseCommand === 'start') {
+      // Execute the start script
+      console.log('[API] Executing start command (./start.sh)');
+      output = await executeScriptInTmux(serverSession, './start.sh', 3000);
+    } else if (baseCommand === 'restart') {
+      // Handle restart by stopping and starting
+      console.log('[API] Executing restart command (stop + ./start.sh)');
+      output = await restartServer(serverSession);
+    } else {
+      // Execute normal command
+      output = await sendCommandAndCapture(serverSession, command);
+    }
 
     // Log the command execution
     await logActivity({
@@ -128,7 +130,8 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       details: {
         command,
         status: 'executed',
-        outputLength: output.length
+        outputLength: output.length,
+        specialCommand: ['start', 'restart'].includes(baseCommand)
       },
       req
     });

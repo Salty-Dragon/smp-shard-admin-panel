@@ -266,3 +266,79 @@ export async function sendCommandAndCapture(
     }
   });
 }
+
+/**
+ * Execute a shell script in the tmux session
+ * This is used for special commands like "start" that need to run shell scripts
+ * 
+ * @param serverName - Server identifier
+ * @param scriptPath - Path to the script to execute (e.g., "./start.sh")
+ * @param timeoutMs - How long to wait for output (default: 2000ms)
+ * @returns Promise<string> - Captured output from script execution
+ */
+export async function executeScriptInTmux(
+  serverName: string,
+  scriptPath: string,
+  timeoutMs: number = 2000
+): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      // Sanitize inputs to prevent command injection
+      const safeName = sanitizeSessionName(serverName);
+      // Validate script path - only allow relative paths starting with ./ and alphanumeric + common script chars
+      if (!scriptPath.match(/^\.\/[a-zA-Z0-9_\-\.\/]+$/)) {
+        console.error(`Invalid script path: ${scriptPath}`);
+        resolve('Error: Invalid script path');
+        return;
+      }
+      
+      // Send the script execution command to tmux
+      const captureCommand = `tmux send-keys -t ${safeName} '${scriptPath}' C-m 2>/dev/null && sleep ${timeoutMs / 1000} && tmux capture-pane -t ${safeName} -p 2>/dev/null`;
+      
+      exec(captureCommand, { maxBuffer: 1024 * 1024 }, (error: Error | null, stdout: string) => {
+        if (error) {
+          console.error(`Error executing script in ${serverName}:`, error);
+          resolve('');
+          return;
+        }
+        
+        // Return the captured output
+        resolve(stdout || '');
+      });
+    } catch (error) {
+      console.error(`Error in executeScriptInTmux for ${serverName}:`, error);
+      resolve('');
+    }
+  });
+}
+
+/**
+ * Handle server restart by stopping and then starting
+ * This is safer than using the built-in restart command which breaks tmux
+ * 
+ * @param serverName - Server identifier
+ * @returns Promise<string> - Status message about the restart
+ */
+export async function restartServer(serverName: string): Promise<string> {
+  try {
+    console.log(`[Console] Initiating server restart for ${serverName}`);
+    
+    // First, send the stop command to the server
+    console.log('[Console] Sending stop command...');
+    await sendCommandAndCapture(serverName, 'stop', 3000);
+    
+    // Wait for the server to fully stop (give it time to save and shut down)
+    console.log('[Console] Waiting for server to stop...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Now execute the start script
+    console.log('[Console] Executing start script...');
+    const output = await executeScriptInTmux(serverName, './start.sh', 3000);
+    
+    console.log('[Console] Restart sequence completed');
+    return 'Server restart initiated: Stop command sent, waiting for shutdown, then starting with ./start.sh';
+  } catch (error) {
+    console.error(`Error restarting server ${serverName}:`, error);
+    return 'Error: Failed to restart server';
+  }
+}

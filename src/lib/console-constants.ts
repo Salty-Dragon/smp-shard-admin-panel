@@ -33,18 +33,18 @@ export const ADMIN_ALLOWED_COMMANDS = [
 export const MAX_COMMAND_LENGTH = 1000;
 
 /**
- * Commands that are blocked from execution via the web console
- * These commands can cause the tmux session to become unresponsive or break the console connection
+ * Special commands that require custom handling
+ * These commands are transformed before being sent to the server
  */
-export const BLOCKED_COMMANDS = [
-  'restart', // Restarts the Java process, breaking tmux session connection
-  'stop',    // Stops the server, breaking tmux session connection
-] as const;
+export const SPECIAL_COMMANDS = {
+  start: 'start',    // Aliased to "./start.sh" script
+  restart: 'restart', // Hijacked to run stop + start.sh
+} as const;
 
 /**
- * Explanation messages for blocked commands
+ * Information messages for special commands
  */
-export const BLOCKED_COMMAND_MESSAGES: Record<string, string> = {
-  'restart': 'The "restart" command cannot be executed via the web console because it breaks the tmux session connection. To restart the server, please use tmux directly: 1) Attach to the session with "tmux attach -t minecraft-server", 2) Execute the restart command, or 3) Use a server management script if available.',
-  'stop': 'The "stop" command cannot be executed via the web console because it breaks the tmux session connection. To stop the server, please use tmux directly or a server management script.',
+export const SPECIAL_COMMAND_INFO: Record<string, string> = {
+  'start': 'Executes the ./start.sh script to start the server',
+  'restart': 'Safely restarts the server by executing stop command followed by ./start.sh',
 };
