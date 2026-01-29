@@ -4,6 +4,9 @@
  * GET - Get file content (for editing config files)
  * PUT - Rename or edit file content
  * DELETE - Delete a file
+ * 
+ * Note: For files in subdirectories, pass the directory path in the 'path' query parameter
+ * and the filename in the 'filename' route parameter
  */
 
 import { NextApiResponse } from 'next';
@@ -16,11 +19,13 @@ import {
   deleteFile,
   fileExists,
   sanitizeFilename,
+  sanitizePath,
   isEditAllowed,
 } from '@/lib/fileUtils';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { filename } = req.query;
+  const relativePath = typeof req.query.path === 'string' ? req.query.path : '';
 
   // Validate filename parameter
   if (typeof filename !== 'string' || !filename) {
@@ -39,11 +44,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     });
   }
 
+  // Combine path and filename for full relative path
+  const fullRelativePath = relativePath ? `${relativePath}/${sanitized}` : sanitized;
+
   // GET - Read file content (for editing)
   if (req.method === 'GET') {
     try {
       // Check if file exists
-      const exists = await fileExists(sanitized);
+      const exists = await fileExists(fullRelativePath);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -60,20 +68,21 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Read file content
-      const content = await readFileContent(sanitized);
+      const content = await readFileContent(fullRelativePath);
 
       // Log activity
       await logActivity({
         userId: req.user.id,
         actionType: 'list_files',
         resource: 'files',
-        resourceId: sanitized,
-        details: { filename: sanitized, action: 'view' },
+        resourceId: fullRelativePath,
+        details: { filename: sanitized, path: relativePath || 'root', action: 'view' },
         req,
       });
 
       return res.status(200).json({
         filename: sanitized,
+        path: relativePath,
         content,
       });
     } catch (error) {
@@ -89,7 +98,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'PUT') {
     try {
       // Check if file exists
-      const exists = await fileExists(sanitized);
+      const exists = await fileExists(fullRelativePath);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -110,8 +119,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           });
         }
 
+        // Construct new full path (keep same directory)
+        const newFullRelativePath = relativePath ? `${relativePath}/${sanitizedNewFilename}` : sanitizedNewFilename;
+
         // Check if new filename already exists
-        const newExists = await fileExists(sanitizedNewFilename);
+        const newExists = await fileExists(newFullRelativePath);
         if (newExists) {
           return res.status(409).json({
             error: 'File exists',
@@ -120,17 +132,20 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         }
 
         // Rename the file
-        await renameFile(sanitized, sanitizedNewFilename);
+        await renameFile(fullRelativePath, newFullRelativePath);
 
         // Log activity
         await logActivity({
           userId: req.user.id,
           actionType: 'rename_file',
           resource: 'files',
-          resourceId: sanitized,
+          resourceId: fullRelativePath,
           details: {
             oldFilename: sanitized,
             newFilename: sanitizedNewFilename,
+            path: relativePath || 'root',
+            oldFullPath: fullRelativePath,
+            newFullPath: newFullRelativePath,
           },
           req,
         });
@@ -139,6 +154,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           message: 'File renamed successfully',
           oldFilename: sanitized,
           newFilename: sanitizedNewFilename,
+          path: relativePath,
         });
       }
 
@@ -161,16 +177,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         }
 
         // Write new content
-        await writeFileContent(sanitized, content);
+        await writeFileContent(fullRelativePath, content);
 
         // Log activity
         await logActivity({
           userId: req.user.id,
           actionType: 'edit_file',
           resource: 'files',
-          resourceId: sanitized,
+          resourceId: fullRelativePath,
           details: {
             filename: sanitized,
+            path: relativePath || 'root',
             contentLength: content.length,
           },
           req,
@@ -179,6 +196,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(200).json({
           message: 'File updated successfully',
           filename: sanitized,
+          path: relativePath,
         });
       }
 
@@ -212,7 +230,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'DELETE') {
     try {
       // Check if file exists
-      const exists = await fileExists(sanitized);
+      const exists = await fileExists(fullRelativePath);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -221,21 +239,22 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Delete the file
-      await deleteFile(sanitized);
+      await deleteFile(fullRelativePath);
 
       // Log activity
       await logActivity({
         userId: req.user.id,
         actionType: 'delete_file',
         resource: 'files',
-        resourceId: sanitized,
-        details: { filename: sanitized },
+        resourceId: fullRelativePath,
+        details: { filename: sanitized, path: relativePath || 'root' },
         req,
       });
 
       return res.status(200).json({
         message: 'File deleted successfully',
         filename: sanitized,
+        path: relativePath,
       });
     } catch (error: unknown) {
       console.error('Error deleting file:', error);

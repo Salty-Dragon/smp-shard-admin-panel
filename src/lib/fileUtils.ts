@@ -47,23 +47,99 @@ export function sanitizeFilename(filename: string): string {
 }
 
 /**
+ * Sanitize a relative path by normalizing and validating path segments
+ * Allows forward slashes for directory navigation but prevents path traversal
+ * 
+ * @param relativePath - Relative path from plugins directory root
+ * @returns Sanitized relative path or empty string if invalid
+ */
+export function sanitizePath(relativePath: string): string {
+  if (!relativePath || relativePath === '/') {
+    return '';
+  }
+  
+  // Normalize the path and remove any leading/trailing slashes
+  let normalized = relativePath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  
+  // Remove null bytes
+  normalized = normalized.replace(/\0/g, '');
+  
+  // Split into segments and validate each
+  const segments = normalized.split('/').filter(segment => segment.length > 0);
+  
+  // Check for path traversal attempts
+  for (const segment of segments) {
+    // Reject segments that are just dots (., .., ..., etc.)
+    if (/^\.+$/.test(segment)) {
+      return '';
+    }
+    
+    // Reject segments with dangerous characters
+    if (/[<>:"|?*\0]/.test(segment)) {
+      return '';
+    }
+  }
+  
+  // Reconstruct the path with forward slashes
+  return segments.join('/');
+}
+
+/**
  * Validate and resolve a path to ensure it's within the allowed directory
  * Prevents path traversal attacks
  * 
- * @param filename - Filename or relative path
+ * @param filename - Filename or relative path (can include subdirectories like "folder/file.txt")
+ * @param isDirectory - Whether this is a directory path (defaults to false)
  * @returns Absolute path if valid, null if invalid
  */
-export function validateAndResolvePath(filename: string): string | null {
+export function validateAndResolvePath(filename: string, isDirectory: boolean = false): string | null {
   try {
-    // Sanitize the filename first
-    const sanitized = sanitizeFilename(filename);
+    if (!filename) {
+      return isDirectory ? PLUGINS_DIR : null;
+    }
     
-    if (!sanitized) {
+    // Check if this looks like a path with directories
+    const hasDirectories = filename.includes('/') || filename.includes('\\');
+    
+    let sanitized: string;
+    if (hasDirectories) {
+      // Split the path into directory and filename parts
+      const normalizedPath = filename.replace(/\\/g, '/');
+      const parts = normalizedPath.split('/');
+      const filenamePart = parts.pop() || '';
+      const directoryPath = parts.join('/');
+      
+      // Sanitize directory path
+      const sanitizedDir = sanitizePath(directoryPath);
+      
+      // Sanitize filename (unless it's a directory-only path)
+      const sanitizedFile = isDirectory ? '' : sanitizeFilename(filenamePart);
+      
+      // Combine sanitized parts
+      if (sanitizedDir && sanitizedFile) {
+        sanitized = `${sanitizedDir}/${sanitizedFile}`;
+      } else if (sanitizedDir && isDirectory) {
+        sanitized = sanitizedDir;
+      } else if (sanitizedFile) {
+        sanitized = sanitizedFile;
+      } else {
+        return null;
+      }
+    } else {
+      // Simple filename, no directories
+      if (isDirectory) {
+        sanitized = sanitizePath(filename);
+      } else {
+        sanitized = sanitizeFilename(filename);
+      }
+    }
+    
+    if (!sanitized && !isDirectory) {
       return null;
     }
     
     // Resolve the full path
-    const fullPath = path.resolve(PLUGINS_DIR, sanitized);
+    const fullPath = sanitized ? path.resolve(PLUGINS_DIR, sanitized) : PLUGINS_DIR;
     
     // Ensure the resolved path is within the plugins directory
     // This prevents path traversal attacks like ../../../etc/passwd
@@ -111,11 +187,12 @@ export function isFileSizeAllowed(size: number): boolean {
 }
 
 /**
- * List all files in the plugins directory
+ * List all files in the plugins directory or a subdirectory
  * 
+ * @param relativePath - Relative path from plugins directory root (optional)
  * @returns Promise<Array> - Array of file information
  */
-export async function listFiles(): Promise<Array<{
+export async function listFiles(relativePath: string = ''): Promise<Array<{
   name: string;
   size: number;
   modified: Date;
@@ -123,14 +200,21 @@ export async function listFiles(): Promise<Array<{
   extension: string;
 }>> {
   try {
-    // Ensure directory exists
-    await fs.mkdir(PLUGINS_DIR, { recursive: true });
+    // Validate and resolve the directory path
+    const dirPath = validateAndResolvePath(relativePath, true);
     
-    const entries = await fs.readdir(PLUGINS_DIR, { withFileTypes: true });
+    if (!dirPath) {
+      throw new Error('Invalid directory path');
+    }
+    
+    // Ensure directory exists
+    await fs.mkdir(dirPath, { recursive: true });
+    
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
     
     const files = await Promise.all(
       entries.map(async (entry) => {
-        const fullPath = path.join(PLUGINS_DIR, entry.name);
+        const fullPath = path.join(dirPath, entry.name);
         const stats = await fs.stat(fullPath);
         
         return {
