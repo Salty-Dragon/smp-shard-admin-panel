@@ -606,14 +606,27 @@ For detailed information, see [SERVER_STATUS_IMPLEMENTATION.md](./SERVER_STATUS_
 # Generate Prisma client after schema changes
 npx prisma generate
 
-# Push schema changes to database
+# Push schema changes to database (recommended for development)
 npx prisma db push
 
-# Create a migration
+# Create a migration (for production deployments)
 npx prisma migrate dev --name migration_name
+
+# Deploy migrations to production
+npx prisma migrate deploy
+
+# Check migration status
+npx prisma migrate status
 
 # Open Prisma Studio (database GUI)
 npx prisma studio
+```
+
+**Important**: If you encounter error P3005 when running migrations on an existing database, see [MIGRATION_BASELINE_GUIDE.md](./MIGRATION_BASELINE_GUIDE.md) for instructions on how to baseline your database.
+
+For existing production databases, use the baseline script:
+```bash
+bash scripts/baseline-migration.sh
 ```
 
 ## 📖 Documentation
@@ -621,6 +634,7 @@ npx prisma studio
 ### Setup and Configuration
 - [TESTING_DEPLOYMENT_GUIDE.md](./TESTING_DEPLOYMENT_GUIDE.md) - Complete setup and deployment guide
 - [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) - Authentication and 2FA configuration
+- [MIGRATION_BASELINE_GUIDE.md](./MIGRATION_BASELINE_GUIDE.md) - How to handle migrations on existing databases (P3005 error fix)
 
 ### Features and Usage
 - [HISTORICAL_DATA_VISUALIZATION_GUIDE.md](./HISTORICAL_DATA_VISUALIZATION_GUIDE.md) - Historical metrics visualization and automatic data collection

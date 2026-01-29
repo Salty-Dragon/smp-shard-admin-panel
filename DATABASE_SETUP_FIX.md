@@ -117,6 +117,12 @@ npx prisma migrate dev --name add_error_reports
 
 **Note**: Once you start using migrations, you should continue using them instead of `db push`.
 
+**Important**: If you encounter error P3005 ("The database schema is not empty") when deploying migrations to an existing database, refer to [MIGRATION_BASELINE_GUIDE.md](./MIGRATION_BASELINE_GUIDE.md) for detailed instructions on how to baseline your database. You can also use the automated script:
+
+```bash
+bash scripts/baseline-migration.sh
+```
+
 ## Common Issues
 
 ### Issue: "Can't reach database server"

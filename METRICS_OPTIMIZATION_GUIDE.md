@@ -185,14 +185,27 @@ prisma/migrations/20260129141003_add_metrics_optimization_and_settings/migration
 3. Create `Settings` table with indexes
 
 To apply the migration:
+
+**For existing databases (prevents P3005 error):**
+```bash
+# Use the automated baseline script
+bash scripts/baseline-migration.sh
+
+# Or manually baseline if database already has the changes
+npx prisma migrate resolve --applied "20260129141003_add_metrics_optimization_and_settings"
+```
+
+**For fresh databases:**
 ```bash
 npx prisma migrate deploy
 ```
 
-Or for development:
+**For development:**
 ```bash
 npx prisma migrate dev
 ```
+
+**Troubleshooting**: If you encounter error P3005 ("The database schema is not empty"), see [MIGRATION_BASELINE_GUIDE.md](./MIGRATION_BASELINE_GUIDE.md) for detailed instructions.
 
 ## Setting Up Automated Maintenance
 
