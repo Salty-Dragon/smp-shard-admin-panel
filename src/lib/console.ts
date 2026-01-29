@@ -281,24 +281,38 @@ export async function executeScriptInTmux(
   scriptPath: string,
   timeoutMs: number = 2000
 ): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     try {
-      // Sanitize inputs to prevent command injection
+      // Sanitize session name
       const safeName = sanitizeSessionName(serverName);
-      // Validate script path - only allow relative paths starting with ./ and alphanumeric + common script chars
-      if (!scriptPath.match(/^\.\/[a-zA-Z0-9_\-\.\/]+$/)) {
-        console.error(`Invalid script path: ${scriptPath}`);
-        resolve('Error: Invalid script path');
+      
+      // Validate script path - must start with ./ and contain only safe characters
+      // Only allow single-level relative paths (no directory traversal)
+      if (!scriptPath.match(/^\.\/[a-zA-Z0-9_\-\.]+$/)) {
+        const error = `Invalid script path: ${scriptPath}. Must start with ./ and contain only alphanumeric characters, dashes, underscores, and dots.`;
+        console.error(error);
+        reject(new Error(error));
         return;
       }
       
+      // Validate timeout is a reasonable positive number
+      if (!Number.isFinite(timeoutMs) || timeoutMs < 0 || timeoutMs > 60000) {
+        const error = `Invalid timeout: ${timeoutMs}. Must be between 0 and 60000ms.`;
+        console.error(error);
+        reject(new Error(error));
+        return;
+      }
+      
+      // Sanitize the script path using the same approach as commands
+      const safeScript = sanitizeCommand(scriptPath);
+      
       // Send the script execution command to tmux
-      const captureCommand = `tmux send-keys -t ${safeName} '${scriptPath}' C-m 2>/dev/null && sleep ${timeoutMs / 1000} && tmux capture-pane -t ${safeName} -p 2>/dev/null`;
+      const captureCommand = `tmux send-keys -t ${safeName} '${safeScript}' C-m 2>/dev/null && sleep ${timeoutMs / 1000} && tmux capture-pane -t ${safeName} -p 2>/dev/null`;
       
       exec(captureCommand, { maxBuffer: 1024 * 1024 }, (error: Error | null, stdout: string) => {
         if (error) {
           console.error(`Error executing script in ${serverName}:`, error);
-          resolve('');
+          reject(error);
           return;
         }
         
@@ -307,7 +321,7 @@ export async function executeScriptInTmux(
       });
     } catch (error) {
       console.error(`Error in executeScriptInTmux for ${serverName}:`, error);
-      resolve('');
+      reject(error instanceof Error ? error : new Error('Unknown error'));
     }
   });
 }
@@ -317,28 +331,64 @@ export async function executeScriptInTmux(
  * This is safer than using the built-in restart command which breaks tmux
  * 
  * @param serverName - Server identifier
- * @returns Promise<string> - Status message about the restart
+ * @param startScript - Path to the start script (default from env or constant)
+ * @param waitTimeMs - Time to wait after stop before starting (default from constant)
+ * @returns Promise<{success: boolean, message: string}> - Status of the restart operation
  */
-export async function restartServer(serverName: string): Promise<string> {
+export async function restartServer(
+  serverName: string,
+  startScript?: string,
+  waitTimeMs?: number
+): Promise<{success: boolean, message: string}> {
   try {
+    // Get start script from parameter, environment variable, or use default
+    const scriptPath = startScript || process.env.MINECRAFT_START_SCRIPT || './start.sh';
+    
+    // Import wait time constant
+    const { RESTART_WAIT_MS } = await import('./console-constants');
+    const waitTime = waitTimeMs || RESTART_WAIT_MS;
+    
     console.log(`[Console] Initiating server restart for ${serverName}`);
+    console.log(`[Console] Using start script: ${scriptPath}`);
+    console.log(`[Console] Wait time: ${waitTime}ms`);
     
     // First, send the stop command to the server
     console.log('[Console] Sending stop command...');
-    await sendCommandAndCapture(serverName, 'stop', 3000);
+    try {
+      await sendCommandAndCapture(serverName, 'stop', 3000);
+    } catch (error) {
+      console.error('[Console] Error sending stop command:', error);
+      return {
+        success: false,
+        message: 'Failed to send stop command to server'
+      };
+    }
     
     // Wait for the server to fully stop (give it time to save and shut down)
-    console.log('[Console] Waiting for server to stop...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(`[Console] Waiting ${waitTime}ms for server to stop...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
     
     // Now execute the start script
     console.log('[Console] Executing start script...');
-    const output = await executeScriptInTmux(serverName, './start.sh', 3000);
-    
-    console.log('[Console] Restart sequence completed');
-    return 'Server restart initiated: Stop command sent, waiting for shutdown, then starting with ./start.sh';
+    try {
+      await executeScriptInTmux(serverName, scriptPath, 3000);
+      console.log('[Console] Restart sequence completed successfully');
+      return {
+        success: true,
+        message: `Server restart initiated: Stop command sent, waited ${waitTime}ms, then started with ${scriptPath}`
+      };
+    } catch (error) {
+      console.error('[Console] Error executing start script:', error);
+      return {
+        success: false,
+        message: `Stop command succeeded, but failed to execute start script: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   } catch (error) {
     console.error(`Error restarting server ${serverName}:`, error);
-    return 'Error: Failed to restart server';
+    return {
+      success: false,
+      message: `Error during restart: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
   }
 }

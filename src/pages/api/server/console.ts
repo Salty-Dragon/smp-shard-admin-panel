@@ -33,6 +33,14 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
   // Extract the base command (first word)
   const baseCommand = trimmedCommand.split(/\s+/)[0].toLowerCase();
 
+  // Stop command is Super Admin only
+  if (baseCommand === 'stop' && userRole !== 'Super Admin') {
+    return {
+      allowed: false,
+      reason: 'The "stop" command is only available to Super Admins.'
+    };
+  }
+
   // Super Admins can execute any command
   if (userRole === 'Super Admin') {
     return { allowed: true };
@@ -40,7 +48,7 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
 
   // For Admins, check if the command is in the allowed list
   // Special commands (start, restart) are also allowed for Admins
-  const isSpecialCommand = Object.keys(SPECIAL_COMMANDS).includes(baseCommand);
+  const isSpecialCommand = SPECIAL_COMMANDS.includes(baseCommand as any);
   const isAllowed = ADMIN_ALLOWED_COMMANDS.some(
     allowedCmd => baseCommand === allowedCmd.toLowerCase()
   );
@@ -107,19 +115,34 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
     // Extract base command to check if it's a special command
     const baseCommand = command.trim().split(/\s+/)[0].toLowerCase();
     let output = '';
+    let executionSuccess = true;
+    let errorMessage = '';
     
-    // Handle special commands
-    if (baseCommand === 'start') {
-      // Execute the start script
-      console.log('[API] Executing start command (./start.sh)');
-      output = await executeScriptInTmux(serverSession, './start.sh', 3000);
-    } else if (baseCommand === 'restart') {
-      // Handle restart by stopping and starting
-      console.log('[API] Executing restart command (stop + ./start.sh)');
-      output = await restartServer(serverSession);
-    } else {
-      // Execute normal command
-      output = await sendCommandAndCapture(serverSession, command);
+    try {
+      // Handle special commands
+      if (baseCommand === 'start') {
+        // Execute the start script
+        const startScript = process.env.MINECRAFT_START_SCRIPT || './start.sh';
+        console.log(`[API] Executing start command (${startScript})`);
+        output = await executeScriptInTmux(serverSession, startScript, 3000);
+      } else if (baseCommand === 'restart') {
+        // Handle restart by stopping and starting
+        console.log('[API] Executing restart command (stop + start script)');
+        const result = await restartServer(serverSession);
+        executionSuccess = result.success;
+        output = result.message;
+        if (!result.success) {
+          errorMessage = result.message;
+        }
+      } else {
+        // Execute normal command
+        output = await sendCommandAndCapture(serverSession, command);
+      }
+    } catch (error) {
+      console.error('[API] Error executing command:', error);
+      executionSuccess = false;
+      errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      output = `Error: ${errorMessage}`;
     }
 
     // Log the command execution
@@ -129,12 +152,24 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       resource: 'console',
       details: {
         command,
-        status: 'executed',
+        status: executionSuccess ? 'executed' : 'error',
         outputLength: output.length,
-        specialCommand: ['start', 'restart'].includes(baseCommand)
+        specialCommand: ['start', 'restart'].includes(baseCommand),
+        error: errorMessage || undefined
       },
       req
     });
+
+    // Return appropriate status based on execution result
+    if (!executionSuccess) {
+      return res.status(500).json({
+        success: false,
+        command,
+        output,
+        error: errorMessage,
+        timestamp: new Date().toISOString()
+      });
+    }
 
     return res.status(200).json({
       success: true,
