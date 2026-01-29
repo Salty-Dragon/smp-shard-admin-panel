@@ -29,7 +29,7 @@ All code has been written, tested, and documented. The implementation is product
 **Implementation Details:**
 - New `playerCount` field in ServerMetrics model
 - Created `src/lib/minecraft.ts` for server integration
-- Updated `/api/monitoring/metrics` endpoint
+- Updated `/apanel44/api/monitoring/metrics` endpoint
 - Added auto-refresh with `setInterval` in dashboard
 - Currently returns simulated data (5-15 players)
 
@@ -47,7 +47,7 @@ All code has been written, tested, and documented. The implementation is product
 **Implementation Details:**
 - Created `/pages/all-stats.tsx` with full statistics view
 - Integrated Recharts library for interactive graphs
-- Created `/api/monitoring/history` for historical data
+- Created `/apanel44/api/monitoring/history` for historical data
 - Three separate trend graphs with tooltips
 - Time range buttons for data filtering
 - Admin/Super Admin access only

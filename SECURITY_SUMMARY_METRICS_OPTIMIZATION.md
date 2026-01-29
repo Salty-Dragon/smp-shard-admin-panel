@@ -10,11 +10,11 @@
 ### 1. Authentication & Authorization
 All new endpoints require proper authentication and role-based access control:
 
-- **Metrics Collection** (`/api/monitoring/metrics`): Admin and Super Admin only
-- **Historical Data** (`/api/monitoring/history`): Admin and Super Admin only  
-- **Settings View** (`/api/monitoring/settings` GET): Admin and Super Admin only
-- **Settings Modify** (`/api/monitoring/settings` PUT): Super Admin only
-- **Maintenance Tasks** (`/api/monitoring/maintenance`): Super Admin only
+- **Metrics Collection** (`/apanel44/api/monitoring/metrics`): Admin and Super Admin only
+- **Historical Data** (`/apanel44/api/monitoring/history`): Admin and Super Admin only  
+- **Settings View** (`/apanel44/api/monitoring/settings` GET): Admin and Super Admin only
+- **Settings Modify** (`/apanel44/api/monitoring/settings` PUT): Super Admin only
+- **Maintenance Tasks** (`/apanel44/api/monitoring/maintenance`): Super Admin only
 - **Settings Page UI** (`/metrics-settings`): Super Admin only (server-side check)
 
 ### 2. Input Validation

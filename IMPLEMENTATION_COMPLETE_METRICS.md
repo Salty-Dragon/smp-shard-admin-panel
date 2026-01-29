@@ -21,7 +21,7 @@ All requirements from the problem statement have been successfully implemented a
 - **Database Failure Recovery**: Metrics are still returned even if history save fails
 
 ### API Improvements
-**Endpoint:** `/api/monitoring/metrics` (GET)
+**Endpoint:** `/apanel44/api/monitoring/metrics` (GET)
 
 **New Response Modes:**
 ```json
@@ -97,7 +97,7 @@ Located at: `prisma/migrations/20260129141003_add_metrics_optimization_and_setti
 4. Safe deletion (only non-aggregated data)
 
 ### Maintenance Task
-**API Endpoint:** `/api/monitoring/maintenance` (POST)
+**API Endpoint:** `/apanel44/api/monitoring/maintenance` (POST)
 - Runs both aggregation and cleanup
 - Returns statistics (records processed and deleted)
 - Super Admin only access
@@ -176,7 +176,7 @@ Located at: `prisma/migrations/20260129141003_add_metrics_optimization_and_setti
 ```
 
 ### Settings API
-**Endpoint:** `/api/monitoring/settings` (GET/PUT)
+**Endpoint:** `/apanel44/api/monitoring/settings` (GET/PUT)
 
 **GET (Admin/Super Admin):**
 - Returns current settings
@@ -205,10 +205,10 @@ Located at: `prisma/migrations/20260129141003_add_metrics_optimization_and_setti
 
 ### API Endpoints Verified
 All new endpoints properly configured:
-- `/api/monitoring/settings` (GET/PUT)
-- `/api/monitoring/maintenance` (POST)
-- `/api/monitoring/metrics` (enhanced)
-- `/api/monitoring/history` (enhanced)
+- `/apanel44/api/monitoring/settings` (GET/PUT)
+- `/apanel44/api/monitoring/maintenance` (POST)
+- `/apanel44/api/monitoring/metrics` (enhanced)
+- `/apanel44/api/monitoring/history` (enhanced)
 
 ### Frontend Testing Ready
 The implementation is ready for manual testing:

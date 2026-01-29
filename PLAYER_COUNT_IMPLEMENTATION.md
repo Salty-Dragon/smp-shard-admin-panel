@@ -38,7 +38,7 @@ Created a new utility module for Minecraft server integration:
 
 ### 3. API Endpoints
 
-#### Updated: `/api/monitoring/metrics`
+#### Updated: `/apanel44/api/monitoring/metrics`
 **File**: `src/pages/api/monitoring/metrics.ts`
 
 - Added import for `getPlayerCount` function
@@ -57,7 +57,7 @@ Created a new utility module for Minecraft server integration:
 }
 ```
 
-#### New: `/api/monitoring/history`
+#### New: `/apanel44/api/monitoring/history`
 **File**: `src/pages/api/monitoring/history.ts` (NEW)
 
 Endpoint for fetching historical metrics data:
@@ -195,7 +195,7 @@ Minecraft Server
        ↓
   minecraft.ts (getPlayerCount)
        ↓
-  /api/monitoring/metrics
+  /apanel44/api/monitoring/metrics
        ↓
   Dashboard.tsx (fetchPlayerCount)
        ↓
@@ -205,11 +205,11 @@ Minecraft Server
 ### Historical Data Flow
 
 ```
-/api/monitoring/metrics?saveHistory=true
+/apanel44/api/monitoring/metrics?saveHistory=true
        ↓
   ServerMetrics table (Prisma)
        ↓
-  /api/monitoring/history
+  /apanel44/api/monitoring/history
        ↓
   All Stats Page (charts)
 ```

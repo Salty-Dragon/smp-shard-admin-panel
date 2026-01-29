@@ -63,7 +63,7 @@ Old metrics are automatically aggregated into time buckets:
 
 ### 4. Enhanced API Endpoints
 
-#### `/api/monitoring/metrics` (GET)
+#### `/apanel44/api/monitoring/metrics` (GET)
 **Improvements:**
 - Checks if metrics are enabled via settings
 - Better error handling with detailed error messages
@@ -93,7 +93,7 @@ Old metrics are automatically aggregated into time buckets:
 }
 ```
 
-#### `/api/monitoring/history` (GET)
+#### `/apanel44/api/monitoring/history` (GET)
 **Improvements:**
 - Support for aggregated data via `includeAggregated` parameter
 - Increased default limit to 1000 records
@@ -119,7 +119,7 @@ Old metrics are automatically aggregated into time buckets:
 }
 ```
 
-#### `/api/monitoring/settings` (GET/PUT)
+#### `/apanel44/api/monitoring/settings` (GET/PUT)
 **New Endpoint** for managing metrics settings:
 - **GET**: Fetch current settings (Admin/Super Admin)
 - **PUT**: Update settings with validation (Super Admin only)
@@ -140,7 +140,7 @@ Old metrics are automatically aggregated into time buckets:
 }
 ```
 
-#### `/api/monitoring/maintenance` (POST)
+#### `/apanel44/api/monitoring/maintenance` (POST)
 **New Endpoint** for running maintenance tasks:
 - Runs data aggregation and cleanup
 - Super Admin only

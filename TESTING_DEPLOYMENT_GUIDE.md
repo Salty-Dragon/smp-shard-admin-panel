@@ -93,7 +93,7 @@ These are **NOT mock values** - they reflect your actual server's current state.
 
 **Enabling Historical Data Collection:**
 
-The metrics API (`/api/monitoring/metrics`) collects live metrics on every call. To save these snapshots to the database for historical tracking, add the `?saveHistory=true` parameter:
+The metrics API (`/apanel44/api/monitoring/metrics`) collects live metrics on every call. To save these snapshots to the database for historical tracking, add the `?saveHistory=true` parameter:
 
 **Steps:**
 
@@ -203,7 +203,7 @@ Set up automated collection using a cron job (see the "Production Deployment" se
 1. Open browser DevTools (F12)
 2. Go to Network tab
 3. Watch for API calls every 10 seconds
-4. Verify `/api/monitoring/metrics` is called
+4. Verify `/apanel44/api/monitoring/metrics` is called
 
 **Expected Results:**
 - API called every 10 seconds
@@ -372,7 +372,7 @@ export async function getPlayerCount(): Promise<number> {
 **Cause:** API call failing or no response
 **Solution:**
 1. Check browser console for errors
-2. Verify `/api/monitoring/metrics` endpoint is accessible
+2. Verify `/apanel44/api/monitoring/metrics` endpoint is accessible
 3. Check server logs for errors
 4. Verify authentication token is valid
 
@@ -407,8 +407,8 @@ export async function getPlayerCount(): Promise<number> {
 ### Key Metrics to Monitor
 
 1. **API Response Times**
-   - `/api/monitoring/metrics` should respond < 500ms
-   - `/api/monitoring/history` should respond < 1s
+   - `/apanel44/api/monitoring/metrics` should respond < 500ms
+   - `/apanel44/api/monitoring/history` should respond < 1s
 
 2. **Database Performance**
    - Monitor ServerMetrics table size
