@@ -18,7 +18,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
-      const { timeRange = '24h', limit = '100', startDate: customStart, endDate: customEnd } = req.query;
+      const { 
+        timeRange = '24h', 
+        limit = '1000', 
+        startDate: customStart, 
+        endDate: customEnd,
+        includeAggregated = 'true'
+      } = req.query;
       
       // Calculate the date range based on the timeRange parameter or custom dates
       const now = new Date();
@@ -59,38 +65,78 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         }
       }
 
+      // Determine if we should include aggregated data
+      const shouldIncludeAggregated = includeAggregated !== 'false';
+      
+      // Build the where clause
+      const whereClause: {
+        timestamp: { gte: Date; lte: Date };
+        isAggregated?: boolean;
+      } = {
+        timestamp: {
+          gte: startDate,
+          lte: endDate,
+        },
+      };
+
+      // If not including aggregated data, filter it out
+      if (!shouldIncludeAggregated) {
+        whereClause.isAggregated = false;
+      }
+
       // Fetch historical metrics from database
       const metrics = await prisma.serverMetrics.findMany({
-        where: {
-          timestamp: {
-            gte: startDate,
-            lte: endDate,
-          },
-        },
+        where: whereClause,
         orderBy: {
           timestamp: 'asc',
         },
         take: parseInt(limit as string),
+        select: {
+          id: true,
+          cpuUsage: true,
+          memoryUsagePercent: true,
+          diskUsage: true,
+          playerCount: true,
+          serverOnline: true,
+          dbStatus: true,
+          timestamp: true,
+          isAggregated: true,
+          aggregationPeriod: true,
+        },
       });
 
       // If no historical data exists, return an empty array
       if (metrics.length === 0) {
         return res.status(200).json({ 
           metrics: [],
-          message: 'No historical data available for the selected time range. Note: The limit is set to ' + limit + ' records. For large time ranges, consider using a shorter period or implementing data aggregation.'
+          count: 0,
+          message: 'No historical data available for the selected time range.'
         });
       }
+
+      // Calculate statistics
+      const rawCount = metrics.filter(m => !m.isAggregated).length;
+      const aggregatedCount = metrics.filter(m => m.isAggregated).length;
 
       return res.status(200).json({ 
         metrics,
         count: metrics.length,
+        stats: {
+          rawDataPoints: rawCount,
+          aggregatedDataPoints: aggregatedCount,
+          totalDataPoints: metrics.length,
+        },
         message: metrics.length >= parseInt(limit as string) 
-          ? `Showing first ${limit} records. For complete data, consider using a shorter time range or implementing pagination.`
+          ? `Showing first ${limit} records. For complete data, consider using a shorter time range.`
           : undefined
       });
     } catch (error) {
-      console.error('Error fetching historical metrics:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error('[History API] Error fetching historical metrics:', error);
+      return res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'Failed to fetch historical metrics',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 
