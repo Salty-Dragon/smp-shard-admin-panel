@@ -10,10 +10,14 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { signOut } from 'next-auth/react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+
+// Constants
+const MAX_FILE_SIZE_BYTES = 35 * 1024 * 1024; // 35MB
+const EDITABLE_EXTENSIONS = ['.yml', '.yaml', '.json', '.properties', '.txt', '.conf', '.cfg'];
 
 interface PluginsProps {
   user: {
@@ -49,14 +53,12 @@ export default function Plugins({ user }: PluginsProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editedContent, setEditedContent] = useState('');
   const [newFileName, setNewFileName] = useState('');
-  const [savingFile, setSavingFile] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/apanel44/api/files');
@@ -64,7 +66,8 @@ export default function Plugins({ user }: PluginsProps) {
         const data = await response.json();
         setFiles(data.files || []);
       } else {
-        setToast({ message: 'Failed to load files', type: 'error' });
+        const errorData = await response.json().catch(() => ({ message: 'Failed to load files' }));
+        setToast({ message: errorData.message || 'Failed to load files', type: 'error' });
       }
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -72,22 +75,33 @@ export default function Plugins({ user }: PluginsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
+    // Validate file type (both extension and MIME type)
     if (!file.name.endsWith('.jar')) {
       setToast({ message: 'Only .jar files are allowed', type: 'error' });
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
+    // Also check MIME type for additional security
+    const validMimeTypes = ['application/java-archive', 'application/x-java-archive', 'application/zip'];
+    if (file.type && !validMimeTypes.includes(file.type)) {
+      setToast({ message: 'Invalid file type. Only JAR files are allowed.', type: 'error' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     // Validate file size (35MB)
-    const maxSize = 35 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
       setToast({ 
         message: `File size exceeds 35MB limit (${(file.size / (1024 * 1024)).toFixed(2)}MB)`, 
         type: 'error' 
@@ -119,8 +133,12 @@ export default function Plugins({ user }: PluginsProps) {
           setToast({ message: 'File uploaded successfully', type: 'success' });
           fetchFiles();
         } else {
-          const response = JSON.parse(xhr.responseText);
-          setToast({ message: response.message || 'Failed to upload file', type: 'error' });
+          try {
+            const response = JSON.parse(xhr.responseText);
+            setToast({ message: response.message || 'Failed to upload file', type: 'error' });
+          } catch {
+            setToast({ message: 'Failed to upload file', type: 'error' });
+          }
         }
         setUploading(false);
         setUploadProgress(0);
@@ -148,8 +166,7 @@ export default function Plugins({ user }: PluginsProps) {
 
   const handleEditFile = async (file: FileInfo) => {
     // Check if file is editable
-    const editableExtensions = ['.yml', '.yaml', '.json', '.properties', '.txt', '.conf', '.cfg'];
-    if (!editableExtensions.includes(file.extension)) {
+    if (!EDITABLE_EXTENSIONS.includes(file.extension)) {
       setToast({ message: 'This file type cannot be edited', type: 'error' });
       return;
     }
@@ -162,7 +179,7 @@ export default function Plugins({ user }: PluginsProps) {
         setSelectedFile(file);
         setShowEditModal(true);
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ message: 'Failed to load file' }));
         setToast({ message: data.message || 'Failed to load file', type: 'error' });
       }
     } catch (error) {
@@ -175,7 +192,7 @@ export default function Plugins({ user }: PluginsProps) {
     if (!selectedFile) return;
 
     try {
-      setSavingFile(true);
+      setIsSaving(true);
       const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
         method: 'PUT',
         headers: {
@@ -188,16 +205,17 @@ export default function Plugins({ user }: PluginsProps) {
         setToast({ message: 'File saved successfully', type: 'success' });
         setShowEditModal(false);
         setSelectedFile(null);
+        setEditedContent('');
         fetchFiles();
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ message: 'Failed to save file' }));
         setToast({ message: data.message || 'Failed to save file', type: 'error' });
       }
     } catch (error) {
       console.error('Error saving file:', error);
       setToast({ message: 'Error saving file', type: 'error' });
     } finally {
-      setSavingFile(false);
+      setIsSaving(false);
     }
   };
 
@@ -205,7 +223,7 @@ export default function Plugins({ user }: PluginsProps) {
     if (!selectedFile || !newFileName.trim()) return;
 
     try {
-      setSavingFile(true);
+      setIsRenaming(true);
       const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
         method: 'PUT',
         headers: {
@@ -221,14 +239,14 @@ export default function Plugins({ user }: PluginsProps) {
         setNewFileName('');
         fetchFiles();
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ message: 'Failed to rename file' }));
         setToast({ message: data.message || 'Failed to rename file', type: 'error' });
       }
     } catch (error) {
       console.error('Error renaming file:', error);
       setToast({ message: 'Error renaming file', type: 'error' });
     } finally {
-      setSavingFile(false);
+      setIsRenaming(false);
     }
   };
 
@@ -236,7 +254,7 @@ export default function Plugins({ user }: PluginsProps) {
     if (!selectedFile) return;
 
     try {
-      setSavingFile(true);
+      setIsDeleting(true);
       const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
         method: 'DELETE',
       });
@@ -247,14 +265,14 @@ export default function Plugins({ user }: PluginsProps) {
         setSelectedFile(null);
         fetchFiles();
       } else {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ message: 'Failed to delete file' }));
         setToast({ message: data.message || 'Failed to delete file', type: 'error' });
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       setToast({ message: 'Error deleting file', type: 'error' });
     } finally {
-      setSavingFile(false);
+      setIsDeleting(false);
     }
   };
 
@@ -271,15 +289,23 @@ export default function Plugins({ user }: PluginsProps) {
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
+    if (bytes < 1) return '< 1 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    const size = Math.max(0, Math.min(i, sizes.length - 1));
+    return Math.round((bytes / Math.pow(k, size)) * 100) / 100 + ' ' + sizes[size];
   };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleString();
+    return date.toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
 
   const handleLogout = async () => {
@@ -297,8 +323,7 @@ export default function Plugins({ user }: PluginsProps) {
   };
 
   const isEditable = (file: FileInfo): boolean => {
-    const editableExtensions = ['.yml', '.yaml', '.json', '.properties', '.txt', '.conf', '.cfg'];
-    return editableExtensions.includes(file.extension);
+    return EDITABLE_EXTENSIONS.includes(file.extension);
   };
 
   return (
@@ -440,6 +465,7 @@ export default function Plugins({ user }: PluginsProps) {
                   disabled={uploading}
                   className="hidden"
                   id="file-upload"
+                  aria-label="Upload JAR file"
                 />
                 <label
                   htmlFor="file-upload"
@@ -486,6 +512,7 @@ export default function Plugins({ user }: PluginsProps) {
                 onClick={fetchFiles}
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 border-b-4 border-blue-800 active:border-b-0 active:mt-1 font-semibold disabled:opacity-50"
+                aria-label="Refresh file list"
               >
                 🔄 Refresh
               </button>
@@ -535,6 +562,7 @@ export default function Plugins({ user }: PluginsProps) {
                                 onClick={() => handleEditFile(file)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
                                 title="Edit file"
+                                aria-label={`Edit ${file.name}`}
                               >
                                 ✏️ Edit
                               </button>
@@ -543,6 +571,7 @@ export default function Plugins({ user }: PluginsProps) {
                               onClick={() => openRenameModal(file)}
                               className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
                               title="Rename file"
+                              aria-label={`Rename ${file.name}`}
                             >
                               ✏️ Rename
                             </button>
@@ -550,6 +579,7 @@ export default function Plugins({ user }: PluginsProps) {
                               onClick={() => openDeleteModal(file)}
                               className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
                               title="Delete file"
+                              aria-label={`Delete ${file.name}`}
                             >
                               🗑️ Delete
                             </button>
@@ -568,36 +598,44 @@ export default function Plugins({ user }: PluginsProps) {
       {/* Edit Modal */}
       <Modal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditedContent('');
+        }}
         title={`Edit ${selectedFile?.name || 'File'}`}
         size="large"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-stone-300 font-semibold mb-2">
+            <label htmlFor="file-content" className="block text-stone-300 font-semibold mb-2">
               File Content
             </label>
             <textarea
+              id="file-content"
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               className="w-full h-96 bg-stone-900 border-2 border-stone-700 text-white p-4 font-mono text-sm"
               placeholder="File content..."
+              aria-describedby="file-content-description"
             />
           </div>
           <div className="flex justify-end space-x-3">
             <button
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                setEditedContent('');
+              }}
               className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile}
+              disabled={isSaving}
             >
               Cancel
             </button>
             <button
               onClick={handleSaveFile}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile}
+              disabled={isSaving}
             >
-              {savingFile ? 'Saving...' : '💾 Save Changes'}
+              {isSaving ? 'Saving...' : '💾 Save Changes'}
             </button>
           </div>
         </div>
@@ -606,16 +644,20 @@ export default function Plugins({ user }: PluginsProps) {
       {/* Rename Modal */}
       <Modal
         isOpen={showRenameModal}
-        onClose={() => setShowRenameModal(false)}
+        onClose={() => {
+          setShowRenameModal(false);
+          setNewFileName('');
+        }}
         title={`Rename ${selectedFile?.name || 'File'}`}
         size="small"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-stone-300 font-semibold mb-2">
+            <label htmlFor="new-file-name" className="block text-stone-300 font-semibold mb-2">
               New File Name
             </label>
             <input
+              id="new-file-name"
               type="text"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
@@ -625,18 +667,21 @@ export default function Plugins({ user }: PluginsProps) {
           </div>
           <div className="flex justify-end space-x-3">
             <button
-              onClick={() => setShowRenameModal(false)}
+              onClick={() => {
+                setShowRenameModal(false);
+                setNewFileName('');
+              }}
               className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile}
+              disabled={isRenaming}
             >
               Cancel
             </button>
             <button
               onClick={handleRenameFile}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile || !newFileName.trim()}
+              disabled={isRenaming || !newFileName.trim()}
             >
-              {savingFile ? 'Renaming...' : '✏️ Rename'}
+              {isRenaming ? 'Renaming...' : '✏️ Rename'}
             </button>
           </div>
         </div>
@@ -645,7 +690,9 @@ export default function Plugins({ user }: PluginsProps) {
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={() => {
+          setShowDeleteModal(false);
+        }}
         title="Delete File"
         size="small"
       >
@@ -664,16 +711,16 @@ export default function Plugins({ user }: PluginsProps) {
             <button
               onClick={() => setShowDeleteModal(false)}
               className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile}
+              disabled={isDeleting}
             >
               Cancel
             </button>
             <button
               onClick={handleDeleteFile}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={savingFile}
+              disabled={isDeleting}
             >
-              {savingFile ? 'Deleting...' : '🗑️ Delete'}
+              {isDeleting ? 'Deleting...' : '🗑️ Delete'}
             </button>
           </div>
         </div>
