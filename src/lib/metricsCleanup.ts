@@ -92,6 +92,7 @@ export async function aggregateOldMetrics(): Promise<{ aggregatedCount: number }
     }
 
     let aggregatedCount = 0;
+    let createdRecords = 0;
 
     // Create aggregated records for each hour
     for (const [hourKey, metrics] of hourlyBuckets) {
@@ -143,13 +144,15 @@ export async function aggregateOldMetrics(): Promise<{ aggregatedCount: number }
           },
         });
 
+        // Only count after both operations succeed
         aggregatedCount += metrics.length;
+        createdRecords++;
       } catch (error) {
         console.error(`[Aggregation] Error aggregating metrics for hour ${hourKey}:`, error);
       }
     }
 
-    console.log(`[Aggregation] Aggregated ${aggregatedCount} metric records into ${hourlyBuckets.size} hourly summaries`);
+    console.log(`[Aggregation] Aggregated ${aggregatedCount} raw metric records into ${createdRecords} hourly summaries`);
 
     return { aggregatedCount };
   } catch (error) {

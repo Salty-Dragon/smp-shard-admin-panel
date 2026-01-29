@@ -112,7 +112,7 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
 
       const data = await response.json();
       setSuccess(
-        `Maintenance completed! Aggregated: ${data.result.aggregatedCount} records, Deleted: ${data.result.deletedCount} records`
+        `Maintenance completed! Raw metrics processed: ${data.result.aggregatedCount}, Old records deleted: ${data.result.deletedCount}`
       );
     } catch (err) {
       console.error('Error running maintenance:', err);
@@ -131,6 +131,28 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
     value: MetricsSettings[K]
   ) => {
     if (settings) {
+      // Validate numeric inputs
+      if (key === 'collectionIntervalSeconds') {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue < 10 || numValue > 3600) {
+          setError('Collection interval must be between 10 and 3600 seconds');
+          return;
+        }
+      } else if (key === 'dataRetentionDays') {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue < 1 || numValue > 365) {
+          setError('Data retention must be between 1 and 365 days');
+          return;
+        }
+      } else if (key === 'aggregationThresholdDays') {
+        const numValue = Number(value);
+        if (isNaN(numValue) || numValue < 1 || numValue > 90) {
+          setError('Aggregation threshold must be between 1 and 90 days');
+          return;
+        }
+      }
+      
+      setError(null);
       setSettings({ ...settings, [key]: value });
     }
   };

@@ -76,7 +76,8 @@ export async function getSettingsByCategory(category: string): Promise<Record<st
     for (const setting of settings) {
       try {
         result[setting.key] = JSON.parse(setting.value);
-      } catch {
+      } catch (parseError) {
+        console.warn(`[Settings] Failed to parse JSON value for ${setting.key}, using raw value:`, parseError);
         result[setting.key] = setting.value;
       }
     }
@@ -95,13 +96,13 @@ export async function getMetricsSettings() {
   const settings = await getSettingsByCategory('metrics');
   
   return {
-    metricsEnabled: (settings.metricsEnabled as boolean) ?? DEFAULT_METRICS_SETTINGS.metricsEnabled,
-    historyCollectionEnabled: (settings.historyCollectionEnabled as boolean) ?? DEFAULT_METRICS_SETTINGS.historyCollectionEnabled,
-    collectionIntervalSeconds: (settings.collectionIntervalSeconds as number) ?? DEFAULT_METRICS_SETTINGS.collectionIntervalSeconds,
-    dataRetentionDays: (settings.dataRetentionDays as number) ?? DEFAULT_METRICS_SETTINGS.dataRetentionDays,
-    aggregationEnabled: (settings.aggregationEnabled as boolean) ?? DEFAULT_METRICS_SETTINGS.aggregationEnabled,
-    aggregationThresholdDays: (settings.aggregationThresholdDays as number) ?? DEFAULT_METRICS_SETTINGS.aggregationThresholdDays,
-    aggregationIntervalHours: (settings.aggregationIntervalHours as number) ?? DEFAULT_METRICS_SETTINGS.aggregationIntervalHours,
+    metricsEnabled: settings.metricsEnabled !== undefined ? (settings.metricsEnabled as boolean) : DEFAULT_METRICS_SETTINGS.metricsEnabled,
+    historyCollectionEnabled: settings.historyCollectionEnabled !== undefined ? (settings.historyCollectionEnabled as boolean) : DEFAULT_METRICS_SETTINGS.historyCollectionEnabled,
+    collectionIntervalSeconds: settings.collectionIntervalSeconds !== undefined ? (settings.collectionIntervalSeconds as number) : DEFAULT_METRICS_SETTINGS.collectionIntervalSeconds,
+    dataRetentionDays: settings.dataRetentionDays !== undefined ? (settings.dataRetentionDays as number) : DEFAULT_METRICS_SETTINGS.dataRetentionDays,
+    aggregationEnabled: settings.aggregationEnabled !== undefined ? (settings.aggregationEnabled as boolean) : DEFAULT_METRICS_SETTINGS.aggregationEnabled,
+    aggregationThresholdDays: settings.aggregationThresholdDays !== undefined ? (settings.aggregationThresholdDays as number) : DEFAULT_METRICS_SETTINGS.aggregationThresholdDays,
+    aggregationIntervalHours: settings.aggregationIntervalHours !== undefined ? (settings.aggregationIntervalHours as number) : DEFAULT_METRICS_SETTINGS.aggregationIntervalHours,
   };
 }
 

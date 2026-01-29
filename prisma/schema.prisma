@@ -220,5 +220,4 @@ model Settings {
   updatedAt         DateTime @updatedAt
   
   @@index([category])
-  @@index([key])
 }

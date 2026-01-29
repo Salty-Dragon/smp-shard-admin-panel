@@ -20,7 +20,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
       const { 
         timeRange = '24h', 
-        limit = '1000', 
+        limit = '1000', // Increased from 100 to support longer time ranges with aggregated data
         startDate: customStart, 
         endDate: customEnd,
         includeAggregated = 'true'

@@ -72,13 +72,19 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         } catch (saveError) {
           console.error('[Metrics API] Error saving metrics to database:', saveError);
           
-          // Check if it's a database connectivity issue
-          if (saveError instanceof Error && saveError.message.includes('database')) {
-            return res.status(200).json({ 
-              metrics,
-              warning: 'Metrics collected but database is unavailable. History not saved.',
-              dbError: true
-            });
+          // Check if it's a Prisma database connectivity issue
+          if (saveError && typeof saveError === 'object' && 'code' in saveError) {
+            const prismaError = saveError as { code?: string };
+            // P1001 = Can't reach database server
+            // P1002 = Database server timeout
+            // P1003 = Database does not exist
+            if (prismaError.code?.startsWith('P100')) {
+              return res.status(200).json({ 
+                metrics,
+                warning: 'Metrics collected but database is unavailable. History not saved.',
+                dbError: true
+              });
+            }
           }
           
           // Still return metrics even if save fails

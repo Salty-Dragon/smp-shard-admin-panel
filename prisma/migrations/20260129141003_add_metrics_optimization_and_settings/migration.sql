@@ -20,6 +20,5 @@ CREATE TABLE `Settings` (
 
     UNIQUE INDEX `Settings_key_key`(`key`),
     INDEX `Settings_category_idx`(`category`),
-    INDEX `Settings_key_idx`(`key`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
