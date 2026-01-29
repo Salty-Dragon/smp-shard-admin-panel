@@ -228,12 +228,20 @@ export default function Dashboard({ user, version }: DashboardProps) {
                 📊 Dashboard
               </Link>
               {(user.role === 'Super Admin' || user.role === 'Admin') && (
-                <Link
-                  href="/users"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  👥 Users
-                </Link>
+                <>
+                  <Link
+                    href="/users"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    👥 Users
+                  </Link>
+                  <Link
+                    href="/plugins"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    🔌 Plugins
+                  </Link>
+                </>
               )}
               {user.role === 'Super Admin' && (
                 <Link

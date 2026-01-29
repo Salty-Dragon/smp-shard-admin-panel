@@ -1,0 +1,728 @@
+/**
+ * Plugins Management Page
+ * Protected route - requires Admin or Super Admin role
+ * Allows uploading, editing, renaming, and deleting plugin files
+ */
+
+import { GetServerSideProps } from 'next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { signOut } from 'next-auth/react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { useEffect, useState, useRef } from 'react';
+import Modal from '@/components/Modal';
+import Toast from '@/components/Toast';
+import Spinner from '@/components/Spinner';
+
+interface PluginsProps {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+interface FileInfo {
+  name: string;
+  size: number;
+  modified: string;
+  isDirectory: boolean;
+  extension: string;
+}
+
+interface ToastMessage {
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+}
+
+export default function Plugins({ user }: PluginsProps) {
+  const [files, setFiles] = useState<FileInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [newFileName, setNewFileName] = useState('');
+  const [savingFile, setSavingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fetchFiles = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/apanel44/api/files');
+      if (response.ok) {
+        const data = await response.json();
+        setFiles(data.files || []);
+      } else {
+        setToast({ message: 'Failed to load files', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      setToast({ message: 'Error loading files', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.jar')) {
+      setToast({ message: 'Only .jar files are allowed', type: 'error' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Validate file size (35MB)
+    const maxSize = 35 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setToast({ 
+        message: `File size exceeds 35MB limit (${(file.size / (1024 * 1024)).toFixed(2)}MB)`, 
+        type: 'error' 
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(progress);
+        }
+      });
+
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 201) {
+          setToast({ message: 'File uploaded successfully', type: 'success' });
+          fetchFiles();
+        } else {
+          const response = JSON.parse(xhr.responseText);
+          setToast({ message: response.message || 'Failed to upload file', type: 'error' });
+        }
+        setUploading(false);
+        setUploadProgress(0);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      });
+
+      // Handle errors
+      xhr.addEventListener('error', () => {
+        setToast({ message: 'Upload failed. Please try again.', type: 'error' });
+        setUploading(false);
+        setUploadProgress(0);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      });
+
+      xhr.open('POST', '/apanel44/api/files');
+      xhr.send(formData);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setToast({ message: 'Error uploading file', type: 'error' });
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEditFile = async (file: FileInfo) => {
+    // Check if file is editable
+    const editableExtensions = ['.yml', '.yaml', '.json', '.properties', '.txt', '.conf', '.cfg'];
+    if (!editableExtensions.includes(file.extension)) {
+      setToast({ message: 'This file type cannot be edited', type: 'error' });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(file.name)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEditedContent(data.content);
+        setSelectedFile(file);
+        setShowEditModal(true);
+      } else {
+        const data = await response.json();
+        setToast({ message: data.message || 'Failed to load file', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error loading file:', error);
+      setToast({ message: 'Error loading file', type: 'error' });
+    }
+  };
+
+  const handleSaveFile = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setSavingFile(true);
+      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: editedContent }),
+      });
+
+      if (response.ok) {
+        setToast({ message: 'File saved successfully', type: 'success' });
+        setShowEditModal(false);
+        setSelectedFile(null);
+        fetchFiles();
+      } else {
+        const data = await response.json();
+        setToast({ message: data.message || 'Failed to save file', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error saving file:', error);
+      setToast({ message: 'Error saving file', type: 'error' });
+    } finally {
+      setSavingFile(false);
+    }
+  };
+
+  const handleRenameFile = async () => {
+    if (!selectedFile || !newFileName.trim()) return;
+
+    try {
+      setSavingFile(true);
+      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newFilename: newFileName.trim() }),
+      });
+
+      if (response.ok) {
+        setToast({ message: 'File renamed successfully', type: 'success' });
+        setShowRenameModal(false);
+        setSelectedFile(null);
+        setNewFileName('');
+        fetchFiles();
+      } else {
+        const data = await response.json();
+        setToast({ message: data.message || 'Failed to rename file', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      setToast({ message: 'Error renaming file', type: 'error' });
+    } finally {
+      setSavingFile(false);
+    }
+  };
+
+  const handleDeleteFile = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setSavingFile(true);
+      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setToast({ message: 'File deleted successfully', type: 'success' });
+        setShowDeleteModal(false);
+        setSelectedFile(null);
+        fetchFiles();
+      } else {
+        const data = await response.json();
+        setToast({ message: data.message || 'Failed to delete file', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      setToast({ message: 'Error deleting file', type: 'error' });
+    } finally {
+      setSavingFile(false);
+    }
+  };
+
+  const openRenameModal = (file: FileInfo) => {
+    setSelectedFile(file);
+    setNewFileName(file.name);
+    setShowRenameModal(true);
+  };
+
+  const openDeleteModal = (file: FileInfo) => {
+    setSelectedFile(file);
+    setShowDeleteModal(true);
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: '/login' });
+  };
+
+  const getFileIcon = (file: FileInfo): string => {
+    if (file.isDirectory) return '📁';
+    if (file.extension === '.jar') return '☕';
+    if (['.yml', '.yaml'].includes(file.extension)) return '📝';
+    if (file.extension === '.json') return '📋';
+    if (['.properties', '.conf', '.cfg'].includes(file.extension)) return '⚙️';
+    if (file.extension === '.txt') return '📄';
+    return '📄';
+  };
+
+  const isEditable = (file: FileInfo): boolean => {
+    const editableExtensions = ['.yml', '.yaml', '.json', '.properties', '.txt', '.conf', '.cfg'];
+    return editableExtensions.includes(file.extension);
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Plugin Management - SMP Admin Panel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+
+      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
+        {/* Header */}
+        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-3xl">⛏️</span>
+              <div>
+                <h1 className="text-2xl font-bold text-green-400" style={{ 
+                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
+                }}>
+                  SMP Admin Panel
+                </h1>
+                <p className="text-stone-400 text-sm">Server Management System</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-white font-semibold">{user.name}</p>
+                <p className="text-stone-400 text-sm">{user.role}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Navigation */}
+        <nav className="bg-stone-800/50 border-b-2 border-stone-700">
+          <div className="container mx-auto px-4">
+            <div className="flex space-x-1">
+              <Link
+                href="/dashboard"
+                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+              >
+                📊 Dashboard
+              </Link>
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <>
+                  <Link
+                    href="/users"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    👥 Users
+                  </Link>
+                  <Link
+                    href="/plugins"
+                    className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
+                  >
+                    🔌 Plugins
+                  </Link>
+                </>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/roles"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🛡️ Roles
+                </Link>
+              )}
+              {(user.role === 'Super Admin' || user.role === 'Moderator') && (
+                <Link
+                  href="/logs"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  📋 Logs
+                </Link>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/error-reports"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🐛 Error Reports
+                </Link>
+              )}
+              {(user.role === 'Super Admin' || user.role === 'Admin') && (
+                <Link
+                  href="/scheduled-tasks"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  ⏰ Tasks
+                </Link>
+              )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/metrics-settings"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  ⚙️ Metrics
+                </Link>
+              )}
+              <Link
+                href="/2fa-setup"
+                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+              >
+                🔐 2FA Setup
+              </Link>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          {/* Page Header */}
+          <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+            <h2 className="text-2xl font-bold text-green-400 mb-2">
+              🔌 Plugin Management
+            </h2>
+            <p className="text-stone-400">
+              Manage server plugins - upload .jar files, edit configurations, and more
+            </p>
+          </div>
+
+          {/* Upload Section */}
+          <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+            <h3 className="text-xl font-bold text-green-400 mb-4">Upload Plugin</h3>
+            <div className="space-y-4">
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".jar"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className={`inline-block ${
+                    uploading 
+                      ? 'bg-stone-600 cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                  } text-white px-6 py-3 border-b-4 ${
+                    uploading ? 'border-stone-800' : 'border-green-800'
+                  } font-semibold`}
+                >
+                  {uploading ? 'Uploading...' : '📤 Choose .jar File'}
+                </label>
+                <p className="text-stone-400 text-sm mt-2">
+                  Maximum file size: 35MB | Only .jar files are supported
+                </p>
+              </div>
+
+              {/* Upload Progress Bar */}
+              {uploading && (
+                <div className="space-y-2">
+                  <div className="bg-stone-900 border-2 border-stone-700 h-8 overflow-hidden">
+                    <div
+                      className="bg-green-600 h-full transition-all duration-300 flex items-center justify-center"
+                      style={{ width: `${uploadProgress}%` }}
+                    >
+                      <span className="text-white font-semibold text-sm">
+                        {uploadProgress}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Files List */}
+          <div className="bg-stone-800 border-4 border-stone-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-green-400">
+                Plugin Files ({files.length})
+              </h3>
+              <button
+                onClick={fetchFiles}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 border-b-4 border-blue-800 active:border-b-0 active:mt-1 font-semibold disabled:opacity-50"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <Spinner size="large" message="Loading files..." />
+              </div>
+            ) : files.length === 0 ? (
+              <div className="text-center py-8 text-stone-400">
+                <p className="text-2xl mb-2">📂</p>
+                <p>No files found in plugins directory</p>
+                <p className="text-sm mt-2">Upload a .jar file to get started</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-stone-900 border-2 border-stone-700">
+                      <th className="text-left p-3 text-green-400 font-semibold">File</th>
+                      <th className="text-left p-3 text-green-400 font-semibold">Size</th>
+                      <th className="text-left p-3 text-green-400 font-semibold">Modified</th>
+                      <th className="text-right p-3 text-green-400 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {files.map((file, index) => (
+                      <tr
+                        key={file.name}
+                        className={`border-b-2 border-stone-700 ${
+                          index % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
+                        }`}
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-2xl">{getFileIcon(file)}</span>
+                            <span className="text-white font-medium">{file.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-stone-300">{formatFileSize(file.size)}</td>
+                        <td className="p-3 text-stone-300">{formatDate(file.modified)}</td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-end space-x-2">
+                            {isEditable(file) && (
+                              <button
+                                onClick={() => handleEditFile(file)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                                title="Edit file"
+                              >
+                                ✏️ Edit
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openRenameModal(file)}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                              title="Rename file"
+                            >
+                              ✏️ Rename
+                            </button>
+                            <button
+                              onClick={() => openDeleteModal(file)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                              title="Delete file"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title={`Edit ${selectedFile?.name || 'File'}`}
+        size="large"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-stone-300 font-semibold mb-2">
+              File Content
+            </label>
+            <textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              className="w-full h-96 bg-stone-900 border-2 border-stone-700 text-white p-4 font-mono text-sm"
+              placeholder="File content..."
+            />
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveFile}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile}
+            >
+              {savingFile ? 'Saving...' : '💾 Save Changes'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Rename Modal */}
+      <Modal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        title={`Rename ${selectedFile?.name || 'File'}`}
+        size="small"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-stone-300 font-semibold mb-2">
+              New File Name
+            </label>
+            <input
+              type="text"
+              value={newFileName}
+              onChange={(e) => setNewFileName(e.target.value)}
+              className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+              placeholder="Enter new filename..."
+            />
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowRenameModal(false)}
+              className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRenameFile}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile || !newFileName.trim()}
+            >
+              {savingFile ? 'Renaming...' : '✏️ Rename'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete File"
+        size="small"
+      >
+        <div className="space-y-4">
+          <div className="bg-red-900/30 border-2 border-red-700 p-4">
+            <p className="text-white font-semibold mb-2">⚠️ Warning</p>
+            <p className="text-stone-300">
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-white">{selectedFile?.name}</span>?
+            </p>
+            <p className="text-stone-400 text-sm mt-2">
+              This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteFile}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
+              disabled={savingFile}
+            >
+              {savingFile ? 'Deleting...' : '🗑️ Delete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
+  );
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  if (!session || !session.user) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  // Check if user has Admin or Super Admin role
+  if (session.user.role !== 'Admin' && session.user.role !== 'Super Admin') {
+    return {
+      redirect: {
+        destination: '/dashboard',
+        permanent: false,
+      },
+    };
+  }
+
+  const user = {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+    role: session.user.role,
+  };
+
+  return {
+    props: {
+      user,
+    },
+  };
+};
