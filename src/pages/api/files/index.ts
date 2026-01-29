@@ -8,6 +8,7 @@
 import { NextApiResponse } from 'next';
 import { IncomingForm } from 'formidable';
 import fs from 'fs/promises';
+import path from 'path';
 import { withAdmin, AuthenticatedRequest } from '@/lib/middleware';
 import { logActivity } from '@/lib/activity';
 import {
@@ -29,21 +30,24 @@ export const config = {
 };
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  // GET - List all files
+  // GET - List all files (supports optional path query parameter for subdirectories)
   if (req.method === 'GET') {
     try {
-      const files = await listFiles();
+      // Get optional path parameter for subdirectory listing
+      const relativePath = typeof req.query.path === 'string' ? req.query.path : '';
+      
+      const files = await listFiles(relativePath);
 
       // Log activity
       await logActivity({
         userId: req.user.id,
         actionType: 'list_files',
         resource: 'files',
-        details: { count: files.length },
+        details: { count: files.length, path: relativePath || 'root' },
         req,
       });
 
-      return res.status(200).json({ files });
+      return res.status(200).json({ files, currentPath: relativePath });
     } catch (error) {
       console.error('Error listing files:', error);
       return res.status(500).json({
@@ -63,7 +67,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         keepExtensions: true,
       });
 
-      const { files } = await new Promise<{
+      const { fields, files } = await new Promise<{
         fields: Record<string, unknown>;
         files: Record<string, unknown>;
       }>((resolve, reject) => {
@@ -75,6 +79,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           resolve({ fields, files });
         });
       });
+
+      // Get optional path parameter for uploading to subdirectory
+      let relativePath = '';
+      if (fields.path && typeof fields.path === 'string') {
+        relativePath = fields.path;
+      } else if (Array.isArray(fields.path)) {
+        relativePath = fields.path[0] || '';
+      }
 
       // Get the uploaded file
       const uploadedFile = files.file;
@@ -121,8 +133,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
+      // Combine path and filename for full relative path
+      const fullRelativePath = relativePath ? `${relativePath}/${sanitized}` : sanitized;
+
       // Check if file already exists
-      const exists = await fileExists(sanitized);
+      const exists = await fileExists(fullRelativePath);
       if (exists) {
         // Clean up temp file
         await fs.unlink(file.filepath).catch(() => {});
@@ -133,7 +148,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Validate and get destination path
-      const destPath = validateAndResolvePath(sanitized);
+      const destPath = validateAndResolvePath(fullRelativePath);
       if (!destPath) {
         // Clean up temp file
         await fs.unlink(file.filepath).catch(() => {});
@@ -143,8 +158,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
-      // Ensure plugins directory exists
-      await fs.mkdir(PLUGINS_DIR, { recursive: true });
+      // Ensure destination directory exists
+      const destDir = path.dirname(destPath);
+      await fs.mkdir(destDir, { recursive: true });
 
       // Move the file from temp to destination
       await fs.rename(file.filepath, destPath);
@@ -157,9 +173,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         userId: req.user.id,
         actionType: 'upload_file',
         resource: 'files',
-        resourceId: sanitized,
+        resourceId: fullRelativePath,
         details: {
           filename: sanitized,
+          path: relativePath || 'root',
+          fullPath: fullRelativePath,
           size: fileSize,
           originalFilename,
         },
@@ -171,6 +189,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         file: {
           name: sanitized,
           size: fileSize,
+          path: relativePath,
         },
       });
     } catch (error: unknown) {
