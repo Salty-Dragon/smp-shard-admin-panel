@@ -11,6 +11,7 @@ A comprehensive web-based administration panel for managing Minecraft SMP (Survi
 - **Database Integration**: Prisma ORM with MariaDB support
 - **Server Console Management**: Real-time interaction with Minecraft servers via tmux
 - **Email Notifications**: SMTP integration for sending notifications and OTP codes
+- **Plugin File Management**: Upload, edit, and manage plugin files with recursive sub-folder navigation
 
 ## 📦 Tech Stack
 
@@ -549,6 +550,46 @@ All API routes are prefixed with `/apanel44` (the application's basePath):
 - `GET /apanel44/api/monitoring/server-status` - Minecraft server status and player count
 - `GET /apanel44/api/monitoring/history` - Historical metrics data
 - More API routes documented in component README files
+
+### File Management API
+
+The file management API allows uploading, editing, and managing plugin files with support for nested directories:
+
+**List Files**
+- `GET /apanel44/api/files` - List files in plugin root directory
+- `GET /apanel44/api/files?path=subfolder` - List files in a subdirectory
+- Returns: Array of file objects with name, size, modified date, isDirectory flag, and extension
+
+**Upload Files**
+- `POST /apanel44/api/files` - Upload .jar file to plugin root directory
+- `POST /apanel44/api/files` with `path` field in FormData - Upload to subdirectory
+- Body: multipart/form-data with `file` field and optional `path` field
+- Max size: 35MB
+- Allowed types: .jar files only
+
+**Read File Content**
+- `GET /apanel44/api/files/[filename]` - Read file from root directory
+- `GET /apanel44/api/files/[filename]?path=subfolder` - Read file from subdirectory
+- Allowed types: .yml, .yaml, .json, .properties, .txt, .conf, .cfg
+- Returns: File content as string
+
+**Edit/Rename File**
+- `PUT /apanel44/api/files/[filename]` - Edit or rename file in root directory
+- `PUT /apanel44/api/files/[filename]?path=subfolder` - Edit or rename file in subdirectory
+- Body (edit): `{ "content": "file content" }`
+- Body (rename): `{ "newFilename": "newname.yml" }`
+
+**Delete File**
+- `DELETE /apanel44/api/files/[filename]` - Delete file from root directory
+- `DELETE /apanel44/api/files/[filename]?path=subfolder` - Delete file from subdirectory
+
+**Security Features:**
+- Path traversal prevention (validates all paths stay within plugin directory)
+- Filename sanitization (removes dangerous characters)
+- Extension whitelisting for uploads and edits
+- File size limits (35MB for .jar files)
+- Admin authentication required for all operations
+- Activity logging for all file operations
 
 ## 🎮 Minecraft Server Integration
 
