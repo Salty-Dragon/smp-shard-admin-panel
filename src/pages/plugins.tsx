@@ -56,15 +56,18 @@ export default function Plugins({ user }: PluginsProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPath, setCurrentPath] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchFiles = useCallback(async () => {
+  const fetchFiles = useCallback(async (path: string = '') => {
     try {
       setLoading(true);
-      const response = await fetch('/apanel44/api/files');
+      const url = path ? `/apanel44/api/files?path=${encodeURIComponent(path)}` : '/apanel44/api/files';
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setFiles(data.files || []);
+        setCurrentPath(path);
       } else {
         const errorData = await response.json().catch(() => ({ message: 'Failed to load files' }));
         setToast({ message: errorData.message || 'Failed to load files', type: 'error' });
@@ -78,7 +81,7 @@ export default function Plugins({ user }: PluginsProps) {
   }, []);
 
   useEffect(() => {
-    fetchFiles();
+    fetchFiles('');
   }, [fetchFiles]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +119,9 @@ export default function Plugins({ user }: PluginsProps) {
 
       const formData = new FormData();
       formData.append('file', file);
+      if (currentPath) {
+        formData.append('path', currentPath);
+      }
 
       const xhr = new XMLHttpRequest();
 
@@ -131,7 +137,7 @@ export default function Plugins({ user }: PluginsProps) {
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
           setToast({ message: 'File uploaded successfully', type: 'success' });
-          fetchFiles();
+          fetchFiles(currentPath);
         } else {
           try {
             const response = JSON.parse(xhr.responseText);
@@ -172,7 +178,10 @@ export default function Plugins({ user }: PluginsProps) {
     }
 
     try {
-      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(file.name)}`);
+      const url = currentPath 
+        ? `/apanel44/api/files/${encodeURIComponent(file.name)}?path=${encodeURIComponent(currentPath)}`
+        : `/apanel44/api/files/${encodeURIComponent(file.name)}`;
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setEditedContent(data.content);
@@ -193,7 +202,10 @@ export default function Plugins({ user }: PluginsProps) {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+      const url = currentPath 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -206,7 +218,7 @@ export default function Plugins({ user }: PluginsProps) {
         setShowEditModal(false);
         setSelectedFile(null);
         setEditedContent('');
-        fetchFiles();
+        fetchFiles(currentPath);
       } else {
         const data = await response.json().catch(() => ({ message: 'Failed to save file' }));
         setToast({ message: data.message || 'Failed to save file', type: 'error' });
@@ -224,7 +236,10 @@ export default function Plugins({ user }: PluginsProps) {
 
     try {
       setIsRenaming(true);
-      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+      const url = currentPath 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +252,7 @@ export default function Plugins({ user }: PluginsProps) {
         setShowRenameModal(false);
         setSelectedFile(null);
         setNewFileName('');
-        fetchFiles();
+        fetchFiles(currentPath);
       } else {
         const data = await response.json().catch(() => ({ message: 'Failed to rename file' }));
         setToast({ message: data.message || 'Failed to rename file', type: 'error' });
@@ -255,7 +270,10 @@ export default function Plugins({ user }: PluginsProps) {
 
     try {
       setIsDeleting(true);
-      const response = await fetch(`/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`, {
+      const url = currentPath 
+        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(currentPath)}`
+        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
@@ -263,7 +281,7 @@ export default function Plugins({ user }: PluginsProps) {
         setToast({ message: 'File deleted successfully', type: 'success' });
         setShowDeleteModal(false);
         setSelectedFile(null);
-        fetchFiles();
+        fetchFiles(currentPath);
       } else {
         const data = await response.json().catch(() => ({ message: 'Failed to delete file' }));
         setToast({ message: data.message || 'Failed to delete file', type: 'error' });
@@ -285,6 +303,34 @@ export default function Plugins({ user }: PluginsProps) {
   const openDeleteModal = (file: FileInfo) => {
     setSelectedFile(file);
     setShowDeleteModal(true);
+  };
+
+  const navigateToFolder = (folderName: string) => {
+    const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+    fetchFiles(newPath);
+  };
+
+  const navigateBack = () => {
+    if (!currentPath) return;
+    const parts = currentPath.split('/');
+    parts.pop();
+    const parentPath = parts.join('/');
+    fetchFiles(parentPath);
+  };
+
+  const getBreadcrumbs = () => {
+    if (!currentPath) return [{ name: 'plugins', path: '' }];
+    
+    const parts = currentPath.split('/');
+    const breadcrumbs = [{ name: 'plugins', path: '' }];
+    
+    let accumulatedPath = '';
+    for (const part of parts) {
+      accumulatedPath = accumulatedPath ? `${accumulatedPath}/${part}` : part;
+      breadcrumbs.push({ name: part, path: accumulatedPath });
+    }
+    
+    return breadcrumbs;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -504,12 +550,42 @@ export default function Plugins({ user }: PluginsProps) {
 
           {/* Files List */}
           <div className="bg-stone-800 border-4 border-stone-700 p-6">
+            {/* Breadcrumb Navigation */}
+            <div className="mb-4 flex items-center space-x-2 text-stone-300">
+              {getBreadcrumbs().map((crumb, index, array) => (
+                <div key={crumb.path} className="flex items-center space-x-2">
+                  <button
+                    onClick={() => fetchFiles(crumb.path)}
+                    className={`hover:text-green-400 font-medium ${
+                      index === array.length - 1 ? 'text-green-400' : 'text-stone-300'
+                    }`}
+                  >
+                    {index === 0 ? '📁 ' : ''}{crumb.name}
+                  </button>
+                  {index < array.length - 1 && (
+                    <span className="text-stone-500">/</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-green-400">
-                Plugin Files ({files.length})
-              </h3>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-xl font-bold text-green-400">
+                  Files ({files.length})
+                </h3>
+                {currentPath && (
+                  <button
+                    onClick={navigateBack}
+                    className="bg-stone-600 hover:bg-stone-700 text-white px-3 py-1 border-b-2 border-stone-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                    aria-label="Go back to parent directory"
+                  >
+                    ⬅️ Back
+                  </button>
+                )}
+              </div>
               <button
-                onClick={fetchFiles}
+                onClick={() => fetchFiles(currentPath)}
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 border-b-4 border-blue-800 active:border-b-0 active:mt-1 font-semibold disabled:opacity-50"
                 aria-label="Refresh file list"
@@ -548,12 +624,24 @@ export default function Plugins({ user }: PluginsProps) {
                         }`}
                       >
                         <td className="p-3">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-2xl">{getFileIcon(file)}</span>
-                            <span className="text-white font-medium">{file.name}</span>
-                          </div>
+                          {file.isDirectory ? (
+                            <button
+                              onClick={() => navigateToFolder(file.name)}
+                              className="flex items-center space-x-2 hover:text-green-400 transition-colors"
+                            >
+                              <span className="text-2xl">{getFileIcon(file)}</span>
+                              <span className="text-white font-medium">{file.name}</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl">{getFileIcon(file)}</span>
+                              <span className="text-white font-medium">{file.name}</span>
+                            </div>
+                          )}
                         </td>
-                        <td className="p-3 text-stone-300">{formatFileSize(file.size)}</td>
+                        <td className="p-3 text-stone-300">
+                          {file.isDirectory ? '—' : formatFileSize(file.size)}
+                        </td>
                         <td className="p-3 text-stone-300">{formatDate(file.modified)}</td>
                         <td className="p-3">
                           <div className="flex items-center justify-end space-x-2">
