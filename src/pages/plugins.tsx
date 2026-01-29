@@ -57,6 +57,8 @@ export default function Plugins({ user }: PluginsProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, FileInfo[]>>({});
+  const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFiles = useCallback(async (path: string = '') => {
@@ -310,6 +312,47 @@ export default function Plugins({ user }: PluginsProps) {
     fetchFiles(newPath);
   };
 
+  const toggleFolder = async (folderName: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+    
+    // If folder is already expanded, collapse it
+    if (expandedFolders[folderPath]) {
+      const newExpanded = { ...expandedFolders };
+      delete newExpanded[folderPath];
+      setExpandedFolders(newExpanded);
+      return;
+    }
+    
+    // Otherwise, fetch and expand the folder
+    try {
+      setLoadingFolders(new Set([...loadingFolders, folderPath]));
+      const url = `/apanel44/api/files?path=${encodeURIComponent(folderPath)}`;
+      const response = await fetch(url);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setExpandedFolders({
+          ...expandedFolders,
+          [folderPath]: data.files || [],
+        });
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to load folder' }));
+        setToast({ message: errorData.message || 'Failed to load folder', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error loading folder:', error);
+      setToast({ message: 'Error loading folder', type: 'error' });
+    } finally {
+      const newLoading = new Set(loadingFolders);
+      newLoading.delete(folderPath);
+      setLoadingFolders(newLoading);
+    }
+  };
+
   const navigateBack = () => {
     if (!currentPath) return;
     const parts = currentPath.split('/');
@@ -370,6 +413,97 @@ export default function Plugins({ user }: PluginsProps) {
 
   const isEditable = (file: FileInfo): boolean => {
     return EDITABLE_EXTENSIONS.includes(file.extension);
+  };
+
+  // Recursive render function for files with nested folders
+  const renderFileRow = (file: FileInfo, depth: number = 0, parentPath: string = ''): React.JSX.Element[] => {
+    const rows: React.JSX.Element[] = [];
+    const filePath = parentPath ? `${parentPath}/${file.name}` : (currentPath ? `${currentPath}/${file.name}` : file.name);
+    const isExpanded = !!expandedFolders[filePath];
+    const isLoadingFolder = loadingFolders.has(filePath);
+    const indentClass = depth > 0 ? `pl-${depth * 8}` : '';
+    const indentStyle = depth > 0 ? { paddingLeft: `${depth * 2}rem` } : {};
+
+    rows.push(
+      <tr
+        key={filePath}
+        className={`border-b-2 border-stone-700 ${
+          depth % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
+        }`}
+      >
+        <td className="p-3" style={indentStyle}>
+          {file.isDirectory ? (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={(e) => toggleFolder(file.name, e)}
+                className="text-green-400 hover:text-green-300 font-bold text-xl w-6 flex items-center justify-center"
+                aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
+                disabled={isLoadingFolder}
+              >
+                {isLoadingFolder ? '⏳' : isExpanded ? '−' : '+'}
+              </button>
+              <button
+                onClick={() => navigateToFolder(file.name)}
+                className="flex items-center space-x-2 hover:text-green-400 transition-colors"
+                title="Navigate into folder"
+              >
+                <span className="text-2xl">{getFileIcon(file)}</span>
+                <span className="text-white font-medium">{file.name}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <span className="w-6"></span>
+              <span className="text-2xl">{getFileIcon(file)}</span>
+              <span className="text-white font-medium">{file.name}</span>
+            </div>
+          )}
+        </td>
+        <td className="p-3 text-stone-300">
+          {file.isDirectory ? '—' : formatFileSize(file.size)}
+        </td>
+        <td className="p-3 text-stone-300">{formatDate(file.modified)}</td>
+        <td className="p-3">
+          <div className="flex items-center justify-end space-x-2">
+            {isEditable(file) && (
+              <button
+                onClick={() => handleEditFile(file)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                title="Edit file"
+                aria-label={`Edit ${file.name}`}
+              >
+                ✏️ Edit
+              </button>
+            )}
+            <button
+              onClick={() => openRenameModal(file)}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+              title="Rename file"
+              aria-label={`Rename ${file.name}`}
+            >
+              ✏️ Rename
+            </button>
+            <button
+              onClick={() => openDeleteModal(file)}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+              title="Delete file"
+              aria-label={`Delete ${file.name}`}
+            >
+              🗑️ Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+
+    // If folder is expanded, render its contents
+    if (isExpanded && expandedFolders[filePath]) {
+      expandedFolders[filePath].forEach((childFile) => {
+        rows.push(...renderFileRow(childFile, depth + 1, filePath));
+      });
+    }
+
+    return rows;
   };
 
   return (
@@ -616,65 +750,7 @@ export default function Plugins({ user }: PluginsProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {files.map((file, index) => (
-                      <tr
-                        key={file.name}
-                        className={`border-b-2 border-stone-700 ${
-                          index % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
-                        }`}
-                      >
-                        <td className="p-3">
-                          {file.isDirectory ? (
-                            <button
-                              onClick={() => navigateToFolder(file.name)}
-                              className="flex items-center space-x-2 hover:text-green-400 transition-colors"
-                            >
-                              <span className="text-2xl">{getFileIcon(file)}</span>
-                              <span className="text-white font-medium">{file.name}</span>
-                            </button>
-                          ) : (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-2xl">{getFileIcon(file)}</span>
-                              <span className="text-white font-medium">{file.name}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3 text-stone-300">
-                          {file.isDirectory ? '—' : formatFileSize(file.size)}
-                        </td>
-                        <td className="p-3 text-stone-300">{formatDate(file.modified)}</td>
-                        <td className="p-3">
-                          <div className="flex items-center justify-end space-x-2">
-                            {isEditable(file) && (
-                              <button
-                                onClick={() => handleEditFile(file)}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-                                title="Edit file"
-                                aria-label={`Edit ${file.name}`}
-                              >
-                                ✏️ Edit
-                              </button>
-                            )}
-                            <button
-                              onClick={() => openRenameModal(file)}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-                              title="Rename file"
-                              aria-label={`Rename ${file.name}`}
-                            >
-                              ✏️ Rename
-                            </button>
-                            <button
-                              onClick={() => openDeleteModal(file)}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-                              title="Delete file"
-                              aria-label={`Delete ${file.name}`}
-                            >
-                              🗑️ Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {files.flatMap((file) => renderFileRow(file, 0, ''))}
                   </tbody>
                 </table>
               </div>
