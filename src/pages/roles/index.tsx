@@ -41,7 +41,7 @@ export default function RolesPage({ user }: RolesPageProps) {
 
   const fetchRoles = async () => {
     try {
-      const response = await fetch('/api/roles');
+      const response = await fetch('/apanel44/api/roles');
       if (response.ok) {
         const data = await response.json();
         setRoles(data.roles || []);
