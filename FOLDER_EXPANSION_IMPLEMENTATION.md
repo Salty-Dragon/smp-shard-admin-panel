@@ -29,20 +29,27 @@ const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
 
 #### New Functions
 
-##### `toggleFolder(folderName: string, event?: React.MouseEvent)`
+##### `toggleFolder(folderPath: string, event?: React.MouseEvent)`
 - Handles expanding/collapsing folders
+- **Fixed**: Now accepts full folder path instead of just name
 - Fetches folder contents from API when expanding
 - Caches folder contents in state to avoid redundant API calls
+- **Fixed**: Uses functional state updates to prevent stale state
 - Shows loading indicator (⏳) while fetching
 - Handles errors gracefully with toast notifications
 
-##### `renderFileRow(file: FileInfo, depth: number, parentPath: string): React.JSX.Element[]`
+##### `navigateToFolder(folderPath: string)`
+- Updated to accept full folder path
+- **Fixed**: Clears expanded folders on navigation to prevent memory leaks
+
+##### `renderFileRow(file: FileInfo, depth: number, parentPath: string, rowIndex: number): React.JSX.Element[]`
 - Recursive function to render file rows with nested folders
 - Returns an array of React elements (table rows)
 - Parameters:
   - `file`: The file/folder to render
   - `depth`: Current nesting depth (for indentation)
   - `parentPath`: Parent folder path (for building full paths)
+  - `rowIndex`: Current row index for alternating colors
 - Renders:
   - Expand/collapse button (+/−) for folders
   - Loading indicator (⏳) when fetching folder contents
@@ -51,6 +58,20 @@ const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
   - Action buttons (Edit, Rename, Delete)
 - Recursively renders child items when folder is expanded
 - Applies indentation based on depth level
+- **Fixed**: Passes correct full paths to toggle and navigate functions
+- **Fixed**: Uses row index for proper alternating colors
+- **Fixed**: Passes relative path to file operation functions
+
+##### `handleEditFileWithPath()`, `openRenameModalWithPath()`, `openDeleteModalWithPath()`
+- Wrapper functions for file operations on nested files
+- Accept files with `_relativePath` property to track parent directory
+- Use the relative path when calling API endpoints
+
+#### Updated Functions
+
+##### `handleSaveFile()`, `handleRenameFile()`, `handleDeleteFile()`
+- **Fixed**: Extract and use the `_relativePath` from selected file
+- Correctly handles operations on files in expanded folders
 
 #### UI Changes
 
@@ -62,14 +83,62 @@ const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
 **After:**
 - Folders show:
   - '+' icon to expand (or '−' to collapse when expanded)
+  - '⏳' icon when loading folder contents
   - Folder icon (📁)
   - Folder name (clickable to navigate)
 - Expanded folders display contents inline with indentation
 - Nested folders can also be expanded/collapsed
 - Files are displayed with proper spacing/indentation
+- Alternating row colors work correctly across all levels
 
 ### Backend Changes
 No backend changes were required. The existing API endpoint `/api/files?path={path}` already supported querying nested folder contents by path.
+
+## Code Review Improvements
+
+All code review feedback has been addressed:
+
+### 1. ✅ Nested Folder Path Handling
+- **Issue**: Functions called with only folder name instead of full path
+- **Fix**: Updated to pass full `filePath` to `toggleFolder()` and `navigateToFolder()`
+
+### 2. ✅ Stale State Prevention
+- **Issue**: State updates without functional form could cause stale state
+- **Fix**: All state updates now use functional form:
+  - `setExpandedFolders(prev => ...)`
+  - `setLoadingFolders(prev => ...)`
+
+### 3. ✅ Memory Leak Prevention
+- **Issue**: Expanded folders remained in state after navigation
+- **Fix**: Clear `expandedFolders` when navigating to new directory
+
+### 4. ✅ File Operations on Nested Files
+- **Issue**: Edit/rename/delete operations didn't work on nested files
+- **Fix**: Store `_relativePath` with file objects and use in API calls
+
+### 5. ✅ Row Color Alternation
+- **Issue**: Colors based on depth, not row position
+- **Fix**: Track row index across all levels for proper alternation
+
+### 6. ✅ Stable React Keys
+- **Issue**: Keys might not be unique across different depths
+- **Fix**: Keys now include filePath, depth, and rowIndex for uniqueness
+
+### 7. ✅ Removed Dead Code
+- **Issue**: Unused variable and duplicate functions
+- **Fix**: Removed unused `indentClass` and old function versions
+
+## Security
+
+### CodeQL Analysis
+- ✅ No security vulnerabilities detected
+- All path handling uses existing validated utilities
+- No new attack vectors introduced
+
+### Path Validation
+- Uses existing `validateAndResolvePath()` from `fileUtils.ts`
+- Prevents path traversal attacks
+- All paths sanitized before API calls
 
 ## User Experience
 
@@ -92,11 +161,13 @@ No backend changes were required. The existing API endpoint `/api/files?path={pa
 2. View navigates into folder (existing behavior preserved)
 3. Breadcrumb navigation updates
 4. Back button appears
+5. Expanded folders are cleared (fresh state)
 
 ### Nested Folders
 - Each nested level is indented by 2rem
 - Nested folders can be independently expanded/collapsed
 - Full path is maintained for API calls and file operations
+- File operations work correctly on nested files
 
 ## Testing Recommendations
 
@@ -147,28 +218,31 @@ No backend changes were required. The existing API endpoint `/api/files?path={pa
 - Rapid expand/collapse clicks
 - Concurrent folder expansions
 
-## Technical Considerations
+## Performance Considerations
 
-### Performance
+### Optimizations
 - Folder contents are cached in state after first load
 - Only fetches from API when expanding for the first time
 - Collapsing doesn't clear cache (instant re-expansion)
-- Consider adding cache expiration for very large folder structures
+- Functional state updates prevent race conditions
 
-### Security
-- Uses existing validated API endpoints
-- Path validation handled by backend (fileUtils.ts)
-- No new security concerns introduced
+### Future Performance Improvements
+- Add cache expiration for very large folder structures
+- Implement virtual scrolling for large file lists
+- Add loading indicators for slow API calls
 
-### Accessibility
-- Added aria-labels for expand/collapse buttons
-- Maintained existing aria-labels for action buttons
-- Visual indicators (icons) with text alternatives
+## Technical Considerations
 
 ### Browser Compatibility
 - Uses standard React/Next.js features
 - No special browser APIs required
 - Responsive design maintained
+
+### Accessibility
+- Added aria-labels for expand/collapse buttons
+- Maintained existing aria-labels for action buttons
+- Visual indicators (icons) with text alternatives
+- Keyboard navigation supported
 
 ## Future Enhancements (Optional)
 1. Add "Expand All" / "Collapse All" buttons
@@ -178,6 +252,21 @@ No backend changes were required. The existing API endpoint `/api/files?path={pa
 5. Virtual scrolling for performance with many files
 6. Drag and drop files between folders
 7. Bulk operations on selected nested files
+8. Search within expanded folders
+9. Filter by file type
+10. Sort nested items independently
 
 ## Conclusion
-The expandable/collapsible folder feature has been successfully implemented with minimal changes to the existing codebase. The solution maintains backward compatibility (navigation still works) while adding the requested inline expansion capability.
+The expandable/collapsible folder feature has been successfully implemented with minimal changes to the existing codebase. The solution:
+- ✅ Maintains backward compatibility (navigation still works)
+- ✅ Adds requested inline expansion capability
+- ✅ Handles nested folders correctly
+- ✅ Supports file operations on nested files
+- ✅ Has no security vulnerabilities
+- ✅ Uses best practices for React state management
+- ✅ Addresses all code review feedback
+
+All acceptance criteria from the problem statement have been met:
+- ✅ UI reflects an expandable/collapsible structure for folders
+- ✅ Users can click '+' to expand a folder and view/edit its files or folders
+- ✅ Backend API updates support dynamic listing and access of folder contents (no changes needed - already supported)
