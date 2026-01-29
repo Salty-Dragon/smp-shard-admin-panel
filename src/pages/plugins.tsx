@@ -584,6 +584,12 @@ export default function Plugins({ user }: PluginsProps) {
                     👥 Users
                   </Link>
                   <Link
+                    href="/console"
+                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                  >
+                    ⌨️ Console
+                  </Link>
+                  <Link
                     href="/plugins"
                     className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
                   >
