@@ -618,11 +618,23 @@ npx prisma studio
 
 ## 📖 Documentation
 
+### Setup and Configuration
+- [TESTING_DEPLOYMENT_GUIDE.md](./TESTING_DEPLOYMENT_GUIDE.md) - Complete setup and deployment guide
+- [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) - Authentication and 2FA configuration
+
+### Features and Usage
+- [HISTORICAL_DATA_VISUALIZATION_GUIDE.md](./HISTORICAL_DATA_VISUALIZATION_GUIDE.md) - Historical metrics visualization and automatic data collection
+- [SERVER_STATUS_IMPLEMENTATION.md](./SERVER_STATUS_IMPLEMENTATION.md) - Server status monitoring features
+
+### Code Documentation
 - [Components README](./src/components/README.md) - Component usage and structure
 - [Library README](./src/lib/README.md) - Utility functions documentation
+
+### External Resources
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [TailwindCSS Documentation](https://tailwindcss.com/docs)
+- [Recharts Documentation](https://recharts.org/) - Chart library for data visualization
 
 ## 🔐 Security
 

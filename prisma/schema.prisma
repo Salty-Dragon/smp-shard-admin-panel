@@ -193,6 +193,7 @@ model ServerMetrics {
   uptime            Float?   // Server uptime in seconds
   diskUsage         Float?   // Disk usage percentage
   playerCount       Int?     // Current online player count
+  serverOnline      Boolean  @default(false) // Minecraft server online status
   
   // Timestamp
   timestamp         DateTime @default(now())
