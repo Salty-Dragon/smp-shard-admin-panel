@@ -10,7 +10,7 @@ import { withAdmin, AuthenticatedRequest } from '@/lib/middleware';
 import { sendCommandAndCapture, tmuxSessionExists } from '@/lib/console';
 import { logActivity } from '@/lib/activity';
 import prisma from '@/lib/prisma';
-import { ADMIN_ALLOWED_COMMANDS, MAX_COMMAND_LENGTH } from '@/lib/console-constants';
+import { ADMIN_ALLOWED_COMMANDS, MAX_COMMAND_LENGTH, BLOCKED_COMMANDS, BLOCKED_COMMAND_MESSAGES } from '@/lib/console-constants';
 
 /**
  * Check if a command is allowed for the given user role
@@ -30,15 +30,30 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
     };
   }
 
-  // Super Admins can execute any command
+  // Extract the base command (first word)
+  const baseCommand = trimmedCommand.split(/\s+/)[0].toLowerCase();
+
+  // Check if command is blocked for ALL users (including Super Admins)
+  // These commands break the tmux session connection
+  const isBlocked = BLOCKED_COMMANDS.some(
+    blockedCmd => baseCommand === blockedCmd.toLowerCase()
+  );
+
+  if (isBlocked) {
+    const message = BLOCKED_COMMAND_MESSAGES[baseCommand] || 
+      'This command is blocked because it can break the web console connection.';
+    return {
+      allowed: false,
+      reason: message
+    };
+  }
+
+  // Super Admins can execute any command (except blocked ones)
   if (userRole === 'Super Admin') {
     return { allowed: true };
   }
 
   // For Admins, check if the command is in the allowed list
-  // Extract the base command (first word)
-  const baseCommand = trimmedCommand.split(/\s+/)[0].toLowerCase();
-
   const isAllowed = ADMIN_ALLOWED_COMMANDS.some(
     allowedCmd => baseCommand === allowedCmd.toLowerCase()
   );

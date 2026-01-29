@@ -83,8 +83,9 @@ export default function ConsolePage({ user }: ConsolePageProps) {
   useEffect(() => {
     if (command.trim()) {
       const baseCommand = command.trim().split(/\s+/)[0].toLowerCase();
+      // For Super Admins, include additional commands but exclude blocked ones (restart, stop)
       const availableCommands = user.role === 'Super Admin' 
-        ? [...ADMIN_ALLOWED_COMMANDS, 'stop', 'restart', 'save-all', 'op', 'deop', 'plugins', 'reload']
+        ? [...ADMIN_ALLOWED_COMMANDS, 'save-all', 'op', 'deop', 'plugins', 'reload']
         : [...ADMIN_ALLOWED_COMMANDS];
       
       const filtered = availableCommands.filter(cmd => 
@@ -351,6 +352,22 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                         Allowed commands: {[...ADMIN_ALLOWED_COMMANDS].join(', ')}
                       </p>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning Card for Blocked Commands */}
+              <div className="bg-yellow-900/30 border-4 border-yellow-700 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">⚠️</div>
+                  <div>
+                    <h3 className="text-yellow-300 font-bold mb-2">Important: Server Restart/Stop</h3>
+                    <p className="text-yellow-200 text-sm mb-2">
+                      The <code className="bg-yellow-900/50 px-1">restart</code> and <code className="bg-yellow-900/50 px-1">stop</code> commands are blocked in the web console because they break the tmux session connection.
+                    </p>
+                    <p className="text-yellow-200 text-sm">
+                      To restart or stop the server, please use tmux directly or a server management script.
+                    </p>
                   </div>
                 </div>
               </div>

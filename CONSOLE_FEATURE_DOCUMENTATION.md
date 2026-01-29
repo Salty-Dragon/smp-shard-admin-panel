@@ -234,3 +234,19 @@ export const MAX_COMMAND_LENGTH = 1000;  // Change this value
 - Check database connection
 - Verify activity logs are being created
 - Check browser console for network errors
+
+### "restart" or "stop" commands are blocked
+The `restart` and `stop` commands are intentionally blocked in the web console because they break the tmux session connection. When these commands are executed:
+1. The Minecraft server process terminates
+2. The tmux session loses connection to the server process
+3. The console drops to a shell prompt
+4. Subsequent commands fail to reach the server
+
+**To restart the server properly:**
+1. Attach to the tmux session: `tmux attach -t minecraft-server`
+2. Stop the server with the `stop` command
+3. Wait for the server to fully shut down
+4. Start the server again with your startup script
+5. Detach from tmux: Press `Ctrl+B`, then `D`
+
+**Alternative:** Use a server management script that handles restart properly by wrapping the Minecraft server in a loop or restart mechanism.
