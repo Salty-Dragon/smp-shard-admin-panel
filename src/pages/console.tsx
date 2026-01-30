@@ -83,9 +83,10 @@ export default function ConsolePage({ user }: ConsolePageProps) {
   useEffect(() => {
     if (command.trim()) {
       const baseCommand = command.trim().split(/\s+/)[0].toLowerCase();
+      // For Super Admins, include additional commands including start and restart
       const availableCommands = user.role === 'Super Admin' 
-        ? [...ADMIN_ALLOWED_COMMANDS, 'stop', 'restart', 'save-all', 'op', 'deop', 'plugins', 'reload']
-        : [...ADMIN_ALLOWED_COMMANDS];
+        ? [...ADMIN_ALLOWED_COMMANDS, 'start', 'restart', 'stop', 'save-all', 'op', 'deop', 'plugins', 'reload']
+        : [...ADMIN_ALLOWED_COMMANDS, 'start', 'restart'];
       
       const filtered = availableCommands.filter(cmd => 
         cmd.startsWith(baseCommand) && cmd !== baseCommand
@@ -348,9 +349,28 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                     </p>
                     {user.role !== 'Super Admin' && (
                       <p className="text-blue-200 text-sm">
-                        Allowed commands: {[...ADMIN_ALLOWED_COMMANDS].join(', ')}
+                        Allowed commands: {[...ADMIN_ALLOWED_COMMANDS].join(', ')}, start, restart
                       </p>
                     )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Card for Special Commands */}
+              <div className="bg-green-900/30 border-4 border-green-700 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">🔧</div>
+                  <div>
+                    <h3 className="text-green-300 font-bold mb-2">Special Commands Available</h3>
+                    <p className="text-green-200 text-sm mb-2">
+                      <code className="bg-green-900/50 px-1">start</code> - Executes ./start.sh to start the server
+                    </p>
+                    <p className="text-green-200 text-sm mb-2">
+                      <code className="bg-green-900/50 px-1">restart</code> - Safely restarts by sending stop command, then executes ./start.sh
+                    </p>
+                    <p className="text-green-200 text-sm">
+                      <code className="bg-green-900/50 px-1">stop</code> - Stops the server (Super Admin only)
+                    </p>
                   </div>
                 </div>
               </div>

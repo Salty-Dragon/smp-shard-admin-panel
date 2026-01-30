@@ -30,7 +30,17 @@ Admins can execute the following commands:
 - `tell`, `msg`, `w` - Send private messages
 - `help` - View help
 
-### 3. Security Features
+### 3. Special Server Management Commands
+
+The console provides special handling for server management commands:
+
+- **`start`** - Executes `./start.sh` to start the server (Admins and Super Admins)
+- **`restart`** - Safely restarts the server by stopping and running `./start.sh` (Admins and Super Admins)
+- **`stop`** - Stops the server (Super Admins only)
+
+These commands are handled specially to prevent the tmux session from becoming disconnected. See `SERVER_MANAGEMENT_GUIDE.md` for detailed usage.
+
+### 4. Security Features
 
 - **Authentication**: All requests require valid session authentication
 - **Authorization**: Only Admin and Super Admin roles can access the console
@@ -43,7 +53,7 @@ Admins can execute the following commands:
   - Timestamp
   - IP address
 
-### 4. User Interface
+### 5. User Interface
 
 - **Terminal-like Output Display**: Shows command results in a scrollable black terminal
 - **Command Input**: Text field with autocomplete suggestions
@@ -234,3 +244,23 @@ export const MAX_COMMAND_LENGTH = 1000;  // Change this value
 - Check database connection
 - Verify activity logs are being created
 - Check browser console for network errors
+
+### Special commands (start, restart, stop)
+The console now provides special handling for server management commands:
+
+**`start` command**: Executes `./start.sh` to start the server
+- Requires `./start.sh` to exist in the server directory
+- Script must be executable (`chmod +x start.sh`)
+- Available to both Admins and Super Admins
+
+**`restart` command**: Safely restarts the server
+- Sends `stop` command to server
+- Waits 5 seconds for clean shutdown
+- Executes `./start.sh` to restart
+- Available to both Admins and Super Admins
+
+**`stop` command**: Stops the server
+- Available to Super Admins only
+- After stopping, use `start` command to restart
+
+For detailed information, see `SERVER_MANAGEMENT_GUIDE.md`.
