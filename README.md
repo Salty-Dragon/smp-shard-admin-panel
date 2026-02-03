@@ -231,6 +231,7 @@ When deploying behind Nginx, proper configuration is **critical** to prevent red
 1. **Trailing Slash Handling**: The app uses `trailingSlash: true` in Next.js, so Nginx must redirect `/apanel44` to `/apanel44/`
 2. **Proxy Redirects**: Use `proxy_redirect off;` to let Next.js handle all routing
 3. **Static File Caching**: Configure appropriate cache headers for `_next/static/` files
+4. **File Upload Size Limit**: Set `client_max_body_size 50M;` to allow plugin file uploads (up to 35MB)
 
 **Quick Setup:**
 
@@ -265,6 +266,9 @@ location /apanel44/ {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     
+    # Allow larger file uploads (for plugin .jar files up to 35MB)
+    client_max_body_size 50M;
+    
     # CRITICAL: Disable nginx trailing slash redirects
     # Let Next.js handle all routing
     proxy_redirect off;
@@ -286,6 +290,7 @@ location /apanel44/_next/static/ {
 - Ensure the `basePath` in `next.config.ts` matches the Nginx location (`/apanel44`)
 - **CRITICAL**: The `location = /apanel44` block redirects to `/apanel44/` with a trailing slash - this prevents redirect loops
 - **CRITICAL**: Use `proxy_redirect off;` to prevent Nginx from interfering with Next.js routing
+- **CRITICAL**: Set `client_max_body_size 50M;` to allow plugin file uploads up to 35MB (without this, you'll get HTTP 413 errors)
 - See the complete `nginx.conf` file in the repository root for the full configuration
 
 ### Environment Variables for Production
