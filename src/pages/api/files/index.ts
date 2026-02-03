@@ -63,8 +63,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Parse the multipart form data
       const form = new IncomingForm({
         maxFileSize: MAX_JAR_SIZE,
+        maxFieldsSize: 10 * 1024 * 1024, // 10MB for form field metadata (path, etc.)
+        maxTotalFileSize: MAX_JAR_SIZE, // Limit total file size for all files
         uploadDir: '/tmp',
         keepExtensions: true,
+        multiples: false, // Only allow single file upload
       });
 
       const { fields, files } = await new Promise<{
