@@ -77,7 +77,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         // Log attempt to access sensitive file
         await logActivity({
           userId: req.user.id,
-          actionType: 'list_files',
+          actionType: 'read_file',
           resource: 'files',
           resourceId: fullRelativePath,
           details: { 
@@ -99,7 +99,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Log activity
       await logActivity({
         userId: req.user.id,
-        actionType: 'list_files',
+        actionType: 'read_file',
         resource: 'files',
         resourceId: fullRelativePath,
         details: { filename: sanitized, path: relativePath || 'root', action: 'view' },

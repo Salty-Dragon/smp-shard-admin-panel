@@ -178,6 +178,8 @@ export function isEditAllowed(filename: string): boolean {
 
 /**
  * Check if a file is a configuration file
+ * In the context of plugin management, all editable files are configuration files
+ * (as opposed to plugin JAR files which are not editable)
  * 
  * @param filename - Filename to check
  * @returns True if file is a configuration file
@@ -189,6 +191,7 @@ export function isConfigFile(filename: string): boolean {
 
 /**
  * Detect if file content contains sensitive information like MySQL credentials
+ * Uses pattern matching to identify database credentials in configuration files
  * 
  * @param content - File content to check
  * @returns True if content contains sensitive information
@@ -196,24 +199,32 @@ export function isConfigFile(filename: string): boolean {
 export function hasSensitiveContent(content: string): boolean {
   const lowerContent = content.toLowerCase();
   
-  // List of keywords that indicate database/MySQL configuration
-  const mysqlKeywords = ['mysql', 'mariadb', 'database', 'jdbc:mysql'];
+  // More precise regex patterns for detecting MySQL/database credentials
+  const patterns = [
+    // Pattern 1: Key-value pairs with password (e.g., "password: secret" or "password=secret")
+    /(?:password|passwd|pwd)\s*[:=]\s*\S+/i,
+    
+    // Pattern 2: JDBC connection strings with credentials
+    /jdbc:(?:mysql|mariadb):\/\/.*(?:password|user)=/i,
+    
+    // Pattern 3: Database configuration blocks with user/password fields
+    /(?:mysql|mariadb|database)\s*[:{][\s\S]*?(?:password|passwd|user|username)/i,
+  ];
+  
+  // Check if any pattern matches
+  const hasCredentialPattern = patterns.some(pattern => pattern.test(content));
+  
+  // Fallback to keyword-based detection for simpler configurations
+  const mysqlKeywords = ['mysql', 'mariadb', 'jdbc:mysql'];
   const credentialKeywords = ['password', 'passwd', 'pwd'];
   const userKeywords = ['user', 'username'];
   
-  // Check if content has MySQL-related keywords
   const hasMysqlRef = mysqlKeywords.some(keyword => lowerContent.includes(keyword));
-  
-  // Check if content has credential-related keywords
   const hasCredentials = credentialKeywords.some(keyword => lowerContent.includes(keyword));
   const hasUser = userKeywords.some(keyword => lowerContent.includes(keyword));
   
-  // Consider content sensitive if it has MySQL reference AND credentials
-  // This covers common patterns like:
-  // - mysql.user and mysql.password
-  // - database.username and database.password
-  // - jdbc:mysql with username/password
-  return hasMysqlRef && (hasCredentials || hasUser);
+  // Consider content sensitive if it matches a pattern OR has MySQL reference with credentials
+  return hasCredentialPattern || (hasMysqlRef && (hasCredentials || hasUser));
 }
 
 /**
