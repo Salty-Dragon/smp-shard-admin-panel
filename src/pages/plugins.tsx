@@ -14,6 +14,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import PluginUpdatesList from '@/components/PluginUpdatesList';
 
 // Constants
 const MAX_FILE_SIZE_BYTES = 35 * 1024 * 1024; // 35MB
@@ -727,6 +728,11 @@ export default function Plugins({ user }: PluginsProps) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Plugin Updates Section */}
+          <div className="mb-6">
+            <PluginUpdatesList />
           </div>
 
           {/* Files List */}

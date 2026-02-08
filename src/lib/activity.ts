@@ -43,6 +43,7 @@ export type ActionType =
   | 'rename_file'
   | 'delete_file'
   | 'list_files'
+  | 'read_file'
   | 'plugin_update';
 
 export interface LogActivityParams {

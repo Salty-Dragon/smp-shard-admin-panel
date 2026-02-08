@@ -15,6 +15,7 @@ import { useRouter } from 'next/router';
 import packageJson from '../../package.json';
 import ErrorReportModal from '@/components/ErrorReportModal';
 import ServerMonitoringPanel from '@/components/ServerMonitoringPanel';
+import ServerVersionCard from '@/components/ServerVersionCard';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 
@@ -377,6 +378,13 @@ export default function Dashboard({ user, version }: DashboardProps) {
               </div>
             </div>
           </div>
+
+          {/* Server Version Card (Admin/Super Admin only) */}
+          {(user.role === 'Super Admin' || user.role === 'Admin') && (
+            <div className="mt-6">
+              <ServerVersionCard />
+            </div>
+          )}
 
           {/* Server Monitoring Panel (Admin/Super Admin only) */}
           {(user.role === 'Super Admin' || user.role === 'Admin') && (
