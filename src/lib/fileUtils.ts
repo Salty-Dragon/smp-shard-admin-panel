@@ -215,16 +215,15 @@ export function hasSensitiveContent(content: string): boolean {
   const hasCredentialPattern = patterns.some(pattern => pattern.test(content));
   
   // Fallback to keyword-based detection for simpler configurations
+  // Only flag if we have BOTH MySQL reference AND credentials (not just user keyword)
   const mysqlKeywords = ['mysql', 'mariadb', 'jdbc:mysql'];
   const credentialKeywords = ['password', 'passwd', 'pwd'];
-  const userKeywords = ['user', 'username'];
   
   const hasMysqlRef = mysqlKeywords.some(keyword => lowerContent.includes(keyword));
   const hasCredentials = credentialKeywords.some(keyword => lowerContent.includes(keyword));
-  const hasUser = userKeywords.some(keyword => lowerContent.includes(keyword));
   
-  // Consider content sensitive if it matches a pattern OR has MySQL reference with credentials
-  return hasCredentialPattern || (hasMysqlRef && (hasCredentials || hasUser));
+  // Consider content sensitive if it matches a pattern OR has MySQL + password
+  return hasCredentialPattern || (hasMysqlRef && hasCredentials);
 }
 
 /**
