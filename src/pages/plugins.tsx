@@ -434,6 +434,8 @@ export default function Plugins({ user }: PluginsProps) {
     const isExpanded = !!expandedFolders[filePath];
     const isLoadingFolder = loadingFolders.has(filePath);
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 2}rem` } : {};
+    // Config files are the same as editable files in this context
+    const isConfig = isEditable(file);
     
     // Create a file object with path info for operations on nested files
     const fileWithPath = { 
@@ -474,6 +476,14 @@ export default function Plugins({ user }: PluginsProps) {
               <span className="w-6"></span>
               <span className="text-2xl">{getFileIcon(file)}</span>
               <span className="text-white font-medium">{file.name}</span>
+              {isConfig && (
+                <span 
+                  className="text-xs bg-yellow-600 text-white px-2 py-0.5 rounded font-semibold"
+                  title="Configuration file - Protected from deletion and renaming"
+                >
+                  🔒 CONFIG
+                </span>
+              )}
             </div>
           )}
         </td>
@@ -487,24 +497,34 @@ export default function Plugins({ user }: PluginsProps) {
               <button
                 onClick={() => handleEditFileWithPath(fileWithPath)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-                title="Edit file"
+                title={isConfig ? "Edit file (sensitive files will be blocked automatically)" : "Edit file"}
                 aria-label={`Edit ${file.name}`}
               >
                 ✏️ Edit
               </button>
             )}
             <button
-              onClick={() => openRenameModalWithPath(fileWithPath)}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-              title="Rename file"
+              onClick={() => !isConfig && openRenameModalWithPath(fileWithPath)}
+              disabled={isConfig}
+              className={`px-3 py-1 border-b-2 font-semibold text-sm ${
+                isConfig
+                  ? 'bg-stone-600 text-stone-400 border-stone-700 cursor-not-allowed'
+                  : 'bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-800 active:border-b-0 active:mt-[2px]'
+              }`}
+              title={isConfig ? "Config files cannot be renamed" : "Rename file"}
               aria-label={`Rename ${file.name}`}
             >
               ✏️ Rename
             </button>
             <button
-              onClick={() => openDeleteModalWithPath(fileWithPath)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 border-b-2 border-red-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-              title="Delete file"
+              onClick={() => !isConfig && openDeleteModalWithPath(fileWithPath)}
+              disabled={isConfig}
+              className={`px-3 py-1 border-b-2 font-semibold text-sm ${
+                isConfig
+                  ? 'bg-stone-600 text-stone-400 border-stone-700 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700 text-white border-red-800 active:border-b-0 active:mt-[2px]'
+              }`}
+              title={isConfig ? "Config files cannot be deleted" : "Delete file"}
               aria-label={`Delete ${file.name}`}
             >
               🗑️ Delete
