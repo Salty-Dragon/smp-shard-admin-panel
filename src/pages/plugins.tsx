@@ -427,10 +427,6 @@ export default function Plugins({ user }: PluginsProps) {
     return EDITABLE_EXTENSIONS.includes(file.extension);
   };
 
-  const isConfigFile = (file: FileInfo): boolean => {
-    return EDITABLE_EXTENSIONS.includes(file.extension);
-  };
-
   // Recursive render function for files with nested folders
   const renderFileRow = (file: FileInfo, depth: number = 0, parentPath: string = '', rowIndex: number = 0): React.JSX.Element[] => {
     const rows: React.JSX.Element[] = [];
@@ -438,7 +434,8 @@ export default function Plugins({ user }: PluginsProps) {
     const isExpanded = !!expandedFolders[filePath];
     const isLoadingFolder = loadingFolders.has(filePath);
     const indentStyle = depth > 0 ? { paddingLeft: `${depth * 2}rem` } : {};
-    const isConfig = isConfigFile(file);
+    // Config files are the same as editable files in this context
+    const isConfig = isEditable(file);
     
     // Create a file object with path info for operations on nested files
     const fileWithPath = { 
