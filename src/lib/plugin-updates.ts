@@ -201,8 +201,9 @@ async function checkModrinthUpdates(
     const searchData = await searchResponse.json();
     
     // Find exact match or closest match
-    const project = searchData.hits?.find(
-      (hit: any) => hit.title.toLowerCase() === pluginName.toLowerCase()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const project = searchData.hits?.find((hit: any) =>
+      hit.title.toLowerCase() === pluginName.toLowerCase()
     ) || searchData.hits?.[0];
     
     if (!project) {

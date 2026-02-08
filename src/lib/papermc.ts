@@ -75,6 +75,7 @@ async function parseVersionFromHistory(
     return null;
   } catch (error) {
     // File might not exist
+    console.log('Version history file not found:', error);
     return null;
   }
 }
@@ -216,6 +217,7 @@ export async function downloadBuild(
     
     // Stream the download to file
     const fileStream = createWriteStream(outputPath);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await pipeline(response.body as any, fileStream);
     
     console.log(`Download completed: ${outputPath}`);

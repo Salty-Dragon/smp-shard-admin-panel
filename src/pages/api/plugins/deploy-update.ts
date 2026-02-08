@@ -72,6 +72,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       
       // Stream the download to temporary file
       const fileStream = createWriteStream(tempPluginPath);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await pipeline(response.body as any, fileStream);
       
       console.log('[Plugin Update] Download completed');
@@ -81,7 +82,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Cleanup temp file if it exists
       try {
         await fs.unlink(tempPluginPath);
-      } catch (e) {
+      } catch {
         // Ignore
       }
       
@@ -146,7 +147,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         // Rename to .disabled
         await fs.rename(currentPluginPath, disabledPluginPath);
         console.log('[Plugin Update] Current plugin disabled');
-      } catch (error) {
+      } catch {
         // Plugin doesn't exist, this is fine (might be a new installation)
         console.log('[Plugin Update] No existing plugin found (new installation)');
       }
@@ -186,7 +187,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Cleanup temp file
       try {
         await fs.unlink(tempPluginPath);
-      } catch (e) {
+      } catch {
         // Ignore
       }
       
