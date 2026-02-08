@@ -21,6 +21,8 @@ import {
   sanitizeFilename,
   sanitizePath,
   isEditAllowed,
+  isConfigFile,
+  hasSensitiveContent,
 } from '@/lib/fileUtils';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
@@ -70,6 +72,30 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       // Read file content
       const content = await readFileContent(fullRelativePath);
 
+      // Check if file contains sensitive information (MySQL credentials)
+      if (hasSensitiveContent(content)) {
+        // Log attempt to access sensitive file
+        await logActivity({
+          userId: req.user.id,
+          actionType: 'list_files',
+          resource: 'files',
+          resourceId: fullRelativePath,
+          details: { 
+            filename: sanitized, 
+            path: relativePath || 'root', 
+            action: 'view_blocked',
+            reason: 'sensitive_content'
+          },
+          req,
+        });
+
+        return res.status(403).json({
+          error: 'Sensitive content',
+          message: 'This file contains sensitive information (MySQL credentials) and can only be modified via direct SSH access.',
+          sensitive: true,
+        });
+      }
+
       // Log activity
       await logActivity({
         userId: req.user.id,
@@ -110,6 +136,29 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
       // Case 1: Rename file
       if (newFilename) {
+        // Block renaming of configuration files
+        if (isConfigFile(sanitized)) {
+          // Log blocked rename attempt
+          await logActivity({
+            userId: req.user.id,
+            actionType: 'rename_file',
+            resource: 'files',
+            resourceId: fullRelativePath,
+            details: {
+              filename: sanitized,
+              path: relativePath || 'root',
+              action: 'rename_blocked',
+              reason: 'config_file_protection',
+            },
+            req,
+          });
+
+          return res.status(403).json({
+            error: 'Operation not allowed',
+            message: 'Configuration files cannot be renamed. Please use direct SSH access.',
+          });
+        }
+
         // Sanitize new filename
         const sanitizedNewFilename = sanitizeFilename(newFilename);
         if (!sanitizedNewFilename) {
@@ -176,6 +225,30 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           });
         }
 
+        // Check if the new content contains sensitive information
+        if (hasSensitiveContent(content)) {
+          // Log blocked edit attempt
+          await logActivity({
+            userId: req.user.id,
+            actionType: 'edit_file',
+            resource: 'files',
+            resourceId: fullRelativePath,
+            details: {
+              filename: sanitized,
+              path: relativePath || 'root',
+              action: 'edit_blocked',
+              reason: 'sensitive_content',
+            },
+            req,
+          });
+
+          return res.status(403).json({
+            error: 'Sensitive content',
+            message: 'This file contains sensitive information (MySQL credentials) and can only be modified via direct SSH access.',
+            sensitive: true,
+          });
+        }
+
         // Write new content
         await writeFileContent(fullRelativePath, content);
 
@@ -235,6 +308,29 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         return res.status(404).json({
           error: 'Not found',
           message: 'File not found',
+        });
+      }
+
+      // Block deletion of configuration files
+      if (isConfigFile(sanitized)) {
+        // Log blocked delete attempt
+        await logActivity({
+          userId: req.user.id,
+          actionType: 'delete_file',
+          resource: 'files',
+          resourceId: fullRelativePath,
+          details: {
+            filename: sanitized,
+            path: relativePath || 'root',
+            action: 'delete_blocked',
+            reason: 'config_file_protection',
+          },
+          req,
+        });
+
+        return res.status(403).json({
+          error: 'Operation not allowed',
+          message: 'Configuration files cannot be deleted. Please use direct SSH access.',
         });
       }
 

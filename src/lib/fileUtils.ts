@@ -177,6 +177,46 @@ export function isEditAllowed(filename: string): boolean {
 }
 
 /**
+ * Check if a file is a configuration file
+ * 
+ * @param filename - Filename to check
+ * @returns True if file is a configuration file
+ */
+export function isConfigFile(filename: string): boolean {
+  const ext = path.extname(filename).toLowerCase();
+  return ALLOWED_EDIT_EXTENSIONS.includes(ext);
+}
+
+/**
+ * Detect if file content contains sensitive information like MySQL credentials
+ * 
+ * @param content - File content to check
+ * @returns True if content contains sensitive information
+ */
+export function hasSensitiveContent(content: string): boolean {
+  const lowerContent = content.toLowerCase();
+  
+  // List of keywords that indicate database/MySQL configuration
+  const mysqlKeywords = ['mysql', 'mariadb', 'database', 'jdbc:mysql'];
+  const credentialKeywords = ['password', 'passwd', 'pwd'];
+  const userKeywords = ['user', 'username'];
+  
+  // Check if content has MySQL-related keywords
+  const hasMysqlRef = mysqlKeywords.some(keyword => lowerContent.includes(keyword));
+  
+  // Check if content has credential-related keywords
+  const hasCredentials = credentialKeywords.some(keyword => lowerContent.includes(keyword));
+  const hasUser = userKeywords.some(keyword => lowerContent.includes(keyword));
+  
+  // Consider content sensitive if it has MySQL reference AND credentials
+  // This covers common patterns like:
+  // - mysql.user and mysql.password
+  // - database.username and database.password
+  // - jdbc:mysql with username/password
+  return hasMysqlRef && (hasCredentials || hasUser);
+}
+
+/**
  * Check if a file size is within the allowed limit for uploads
  * 
  * @param size - File size in bytes
