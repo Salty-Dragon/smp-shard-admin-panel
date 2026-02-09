@@ -26,6 +26,7 @@ export type ActionType =
   | 'server_restart'
   | 'server_config_update'
   | 'server_status_change'
+  | 'server_update'
   | 'config_update'
   | 'player_action'
   | '2fa_enabled'
@@ -41,7 +42,9 @@ export type ActionType =
   | 'edit_file'
   | 'rename_file'
   | 'delete_file'
-  | 'list_files';
+  | 'list_files'
+  | 'read_file'
+  | 'plugin_update';
 
 export interface LogActivityParams {
   userId: string;

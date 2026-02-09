@@ -12,6 +12,7 @@ A comprehensive web-based administration panel for managing Minecraft SMP (Survi
 - **Server Console Management**: Real-time interaction with Minecraft servers via tmux
 - **Email Notifications**: SMTP integration for sending notifications and OTP codes
 - **Plugin File Management**: Upload, edit, and manage plugin files with recursive sub-folder navigation
+- **Update Management**: Automatic detection and deployment of PaperMC server and plugin updates with rollback protection
 
 ## 📦 Tech Stack
 
@@ -596,6 +597,39 @@ The file management API allows uploading, editing, and managing plugin files wit
 - Admin authentication required for all operations
 - Activity logging for all file operations
 
+### Update Management API
+
+The update management system provides automatic detection and deployment of server and plugin updates:
+
+**Server Version Management**
+- `GET /apanel44/api/server/version` - Get current and latest PaperMC version
+  - Auth: Admin or Super Admin
+  - Returns: Current version, build, latest version, build, and update availability
+- `POST /apanel44/api/server/update` - Deploy PaperMC server update
+  - Auth: Super Admin only
+  - Body: `{ targetBuild: number }`
+  - Features: Automatic backup, graceful stop/start, health checks, automatic rollback on failure
+
+**Plugin Update Management**
+- `GET /apanel44/api/plugins/updates` - Get all plugins with update information
+  - Auth: Admin or Super Admin
+  - Returns: Total plugins, updates available, plugin list with metadata
+  - Sources: Hangar, Modrinth, Spiget
+- `POST /apanel44/api/plugins/deploy-update` - Deploy plugin update
+  - Auth: Admin or Super Admin
+  - Body: `{ pluginFilename: string, downloadUrl: string }`
+  - Features: Automatic backup (.disabled), graceful stop/start, health checks, automatic rollback on failure
+
+**Security Features:**
+- Super Admin required for server updates
+- Admin or Super Admin required for plugin updates
+- Automatic rollback if server fails to start
+- Activity logging for all update operations
+- Filename sanitization and validation
+- Download source validation
+
+For complete documentation, see [UPDATE_MANAGEMENT_DOCUMENTATION.md](UPDATE_MANAGEMENT_DOCUMENTATION.md).
+
 ## 🎮 Minecraft Server Integration
 
 The panel integrates with Minecraft servers to provide real-time statistics:
@@ -685,6 +719,7 @@ bash scripts/baseline-migration.sh
 ### Features and Usage
 - [HISTORICAL_DATA_VISUALIZATION_GUIDE.md](./HISTORICAL_DATA_VISUALIZATION_GUIDE.md) - Historical metrics visualization and automatic data collection
 - [SERVER_STATUS_IMPLEMENTATION.md](./SERVER_STATUS_IMPLEMENTATION.md) - Server status monitoring features
+- [UPDATE_MANAGEMENT_DOCUMENTATION.md](./UPDATE_MANAGEMENT_DOCUMENTATION.md) - Comprehensive guide to server and plugin update management
 
 ### Code Documentation
 - [Components README](./src/components/README.md) - Component usage and structure
