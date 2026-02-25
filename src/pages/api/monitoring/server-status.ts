@@ -10,14 +10,17 @@ import { getServerStatus } from '@/lib/minecraft';
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      console.log('[Server Status API] Fetching server status...');
+      // Get optional instanceId from query parameter
+      const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
+      
+      console.log('[Server Status API] Fetching server status for instance:', instanceId || 'default');
       
       // Get server status from Minecraft integration
-      const status = await getServerStatus();
+      const status = await getServerStatus(instanceId);
       
       console.log('[Server Status API] Server status retrieved:', status);
       
-      return res.status(200).json({ status });
+      return res.status(200).json({ status, instanceId });
     } catch (error) {
       console.error('[Server Status API] Error fetching server status:', error);
       return res.status(500).json({ 
