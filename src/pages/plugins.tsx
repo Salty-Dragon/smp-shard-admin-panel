@@ -658,6 +658,14 @@ export default function Plugins({ user }: PluginsProps) {
                   ⚙️ Metrics
                 </Link>
               )}
+              {user.role === 'Super Admin' && (
+                <Link
+                  href="/migrate-instance-data"
+                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
+                >
+                  🔄 Migrate Data
+                </Link>
+              )}
               <Link
                 href="/2fa-setup"
                 className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
