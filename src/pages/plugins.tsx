@@ -15,6 +15,8 @@ import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
 import PluginUpdatesList from '@/components/PluginUpdatesList';
+import InstanceBanner from '@/components/InstanceBanner';
+import { useInstance } from '@/contexts/InstanceContext';
 
 // Constants
 const MAX_FILE_SIZE_BYTES = 35 * 1024 * 1024; // 35MB
@@ -43,6 +45,7 @@ interface ToastMessage {
 }
 
 export default function Plugins({ user }: PluginsProps) {
+  const { currentInstance } = useInstance();
   const [files, setFiles] = useState<FileInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -65,7 +68,10 @@ export default function Plugins({ user }: PluginsProps) {
   const fetchFiles = useCallback(async (path: string = '') => {
     try {
       setLoading(true);
-      const url = path ? `/apanel44/api/files?path=${encodeURIComponent(path)}` : '/apanel44/api/files';
+      const instanceParam = currentInstance ? `&instanceId=${encodeURIComponent(currentInstance)}` : '';
+      const url = path
+        ? `/apanel44/api/files?path=${encodeURIComponent(path)}${instanceParam}`
+        : `/apanel44/api/files${currentInstance ? `?instanceId=${encodeURIComponent(currentInstance)}` : ''}`;
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -81,7 +87,7 @@ export default function Plugins({ user }: PluginsProps) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentInstance]);
 
   useEffect(() => {
     fetchFiles('');
@@ -124,6 +130,9 @@ export default function Plugins({ user }: PluginsProps) {
       formData.append('file', file);
       if (currentPath) {
         formData.append('path', currentPath);
+      }
+      if (currentInstance) {
+        formData.append('instanceId', currentInstance);
       }
 
       const xhr = new XMLHttpRequest();
@@ -341,7 +350,8 @@ export default function Plugins({ user }: PluginsProps) {
     // Otherwise, fetch and expand the folder
     try {
       setLoadingFolders(prev => new Set([...prev, folderPath]));
-      const url = `/apanel44/api/files?path=${encodeURIComponent(folderPath)}`;
+      const instanceParam = currentInstance ? `&instanceId=${encodeURIComponent(currentInstance)}` : '';
+      const url = `/apanel44/api/files?path=${encodeURIComponent(folderPath)}${instanceParam}`;
       const response = await fetch(url);
       
       if (response.ok) {
@@ -675,6 +685,9 @@ export default function Plugins({ user }: PluginsProps) {
             </div>
           </div>
         </nav>
+
+        {/* Instance Banner */}
+        <InstanceBanner />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">

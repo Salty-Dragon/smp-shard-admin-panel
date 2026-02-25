@@ -9,6 +9,8 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import InstanceBanner from '@/components/InstanceBanner';
+import { useInstance } from '@/contexts/InstanceContext';
 
 interface ActivityLog {
   id: string;
@@ -37,6 +39,7 @@ interface LogsPageProps {
 }
 
 export default function LogsPage({ user }: LogsPageProps) {
+  const { currentInstance } = useInstance();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(user.role !== 'Super Admin'); // Auto-auth for non-Super Admins
@@ -52,7 +55,8 @@ export default function LogsPage({ user }: LogsPageProps) {
     if (authenticated) {
       fetchLogs();
     }
-  }, [authenticated, filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, filters, currentInstance]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +98,10 @@ export default function LogsPage({ user }: LogsPageProps) {
       if (filters.hours) {
         const startDate = new Date(Date.now() - parseInt(filters.hours) * 60 * 60 * 1000);
         params.append('startDate', startDate.toISOString());
+      }
+
+      if (currentInstance) {
+        params.append('instanceId', currentInstance);
       }
 
       const response = await fetch(`/apanel44/api/logs?${params.toString()}`);
@@ -222,6 +230,9 @@ export default function LogsPage({ user }: LogsPageProps) {
             </Link>
           </div>
         </header>
+
+        {/* Instance Banner */}
+        <InstanceBanner />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">

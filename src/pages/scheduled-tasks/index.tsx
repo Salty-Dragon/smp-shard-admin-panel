@@ -12,6 +12,8 @@ import { useEffect, useState } from 'react';
 import Spinner from '@/components/Spinner';
 import Toast from '@/components/Toast';
 import Modal from '@/components/Modal';
+import InstanceBanner from '@/components/InstanceBanner';
+import { useInstance } from '@/contexts/InstanceContext';
 
 interface ScheduledTask {
   id: string;
@@ -55,6 +57,7 @@ interface TaskFormData {
 }
 
 export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
+  const { currentInstance } = useInstance();
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -77,7 +80,8 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
 
   useEffect(() => {
     fetchTasks();
-  }, [filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, currentInstance]);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -85,6 +89,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
       const params = new URLSearchParams();
       if (filters.status) params.append('status', filters.status);
       if (filters.taskType) params.append('taskType', filters.taskType);
+      if (currentInstance) params.append('instanceId', currentInstance);
 
       const response = await fetch(`/apanel44/api/scheduled-tasks?${params.toString()}`);
       
@@ -151,6 +156,10 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
         scheduleType: formData.scheduleType,
         status: formData.status,
       };
+
+      if (currentInstance) {
+        body.instanceId = currentInstance;
+      }
 
       if (!editingTask) {
         body.taskType = formData.taskType;
@@ -271,6 +280,9 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
             </Link>
           </div>
         </header>
+
+        {/* Instance Banner */}
+        <InstanceBanner />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">

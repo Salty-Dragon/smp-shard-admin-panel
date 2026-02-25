@@ -10,6 +10,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { getDefaultInstance } from '@/lib/serverInstances';
+import InstanceBanner from '@/components/InstanceBanner';
 
 interface MigrateInstanceDataProps {
   user: {
@@ -141,6 +142,9 @@ export default function MigrateInstanceDataPage({ user, defaultInstanceId }: Mig
             </Link>
           </div>
         </header>
+
+        {/* Instance Banner */}
+        <InstanceBanner />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
