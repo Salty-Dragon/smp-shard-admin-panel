@@ -18,6 +18,8 @@ import ServerMonitoringPanel from '@/components/ServerMonitoringPanel';
 import ServerVersionCard from '@/components/ServerVersionCard';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import InstanceSelector from '@/components/InstanceSelector';
+import { useInstance } from '@/contexts/InstanceContext';
 
 interface DashboardProps {
   user: {
@@ -65,6 +67,9 @@ export default function Dashboard({ user, version }: DashboardProps) {
   const [showErrorReportModal, setShowErrorReportModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
+  
+  // Get current instance from context
+  const { currentInstance, setCurrentInstance } = useInstance();
 
   useEffect(() => {
     // Set current time on client side only to avoid hydration mismatch
@@ -83,7 +88,7 @@ export default function Dashboard({ user, version }: DashboardProps) {
     
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentInstance]); // Re-fetch when instance changes
 
   const fetchRecentActivity = async () => {
     try {
@@ -101,7 +106,11 @@ export default function Dashboard({ user, version }: DashboardProps) {
 
   const fetchServerStatus = async () => {
     try {
-      const response = await fetch('/apanel44/api/monitoring/server-status');
+      const url = currentInstance 
+        ? `/apanel44/api/monitoring/server-status?instanceId=${encodeURIComponent(currentInstance)}`
+        : '/apanel44/api/monitoring/server-status';
+        
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         if (data.status) {
@@ -299,6 +308,17 @@ export default function Dashboard({ user, version }: DashboardProps) {
             </div>
           </div>
         </nav>
+
+        {/* Instance Selector Bar */}
+        <div className="bg-stone-800/30 border-b border-stone-700">
+          <div className="container mx-auto px-4 py-3">
+            <InstanceSelector
+              currentInstance={currentInstance || undefined}
+              onInstanceChange={(id) => setCurrentInstance(id)}
+              className="justify-center"
+            />
+          </div>
+        </div>
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">

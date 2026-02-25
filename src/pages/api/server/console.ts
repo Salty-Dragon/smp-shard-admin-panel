@@ -69,7 +69,7 @@ function isCommandAllowed(command: string, userRole: string): { allowed: boolean
  */
 async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
-    const { command } = req.body;
+    const { command, instanceId } = req.body;
 
     if (!command || typeof command !== 'string') {
       return res.status(400).json({
@@ -88,6 +88,7 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
         resource: 'console',
         details: {
           command,
+          instanceId,
           status: 'denied',
           reason
         },
@@ -100,15 +101,26 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       });
     }
 
-    // Get the server session name from environment
-    const serverSession = process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server';
+    // Get server instance configuration
+    const { getServerInstance } = await import('@/lib/serverInstances');
+    const instance = getServerInstance(instanceId);
+    
+    if (!instance) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: `Invalid server instance: ${instanceId}`
+      });
+    }
+    
+    const serverSession = instance.tmuxSession;
 
     // Check if tmux session exists
     const sessionExists = await tmuxSessionExists(serverSession);
     if (!sessionExists) {
       return res.status(503).json({
         error: 'Service Unavailable',
-        message: `Minecraft server tmux session '${serverSession}' not found. Make sure the server is running.`
+        message: `Minecraft server tmux session '${serverSession}' not found. Make sure the server is running.`,
+        instance: instance.displayName
       });
     }
 
@@ -122,13 +134,13 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       // Handle special commands
       if (baseCommand === 'start') {
         // Execute the start script
-        const startScript = process.env.MINECRAFT_START_SCRIPT || './start.sh';
-        console.log(`[API] Executing start command (${startScript})`);
+        const startScript = instance.startScript;
+        console.log(`[API] Executing start command (${startScript}) for instance ${instance.id}`);
         output = await executeScriptInTmux(serverSession, startScript, 3000);
       } else if (baseCommand === 'restart') {
         // Handle restart by stopping and starting
-        console.log('[API] Executing restart command (stop + start script)');
-        const result = await restartServer(serverSession);
+        console.log(`[API] Executing restart command (stop + start script) for instance ${instance.id}`);
+        const result = await restartServer(serverSession, instance.startScript);
         executionSuccess = result.success;
         output = result.message;
         if (!result.success) {
@@ -152,6 +164,8 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       resource: 'console',
       details: {
         command,
+        instanceId: instance.id,
+        instanceName: instance.displayName,
         status: executionSuccess ? 'executed' : 'error',
         outputLength: output.length,
         specialCommand: ['start', 'restart'].includes(baseCommand),

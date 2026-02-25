@@ -20,6 +20,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
+      // Get optional instanceId from query parameter
+      const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
+
       // Get metrics settings
       const settings = await getMetricsSettings();
 
@@ -32,12 +35,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Log the metrics fetch attempt
-      console.log('[Metrics API] Fetching server metrics...');
+      console.log('[Metrics API] Fetching server metrics for instance:', instanceId || 'default');
 
       // Collect system metrics with error handling
       let metrics;
       try {
-        metrics = await collectMetrics();
+        metrics = await collectMetrics(instanceId);
       } catch (collectError) {
         console.error('[Metrics API] Error collecting metrics:', collectError);
         return res.status(500).json({ 
@@ -52,6 +55,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         memoryUsagePercent: metrics.memoryUsagePercent,
         playerCount: metrics.playerCount,
         dbStatus: metrics.dbStatus,
+        instanceId,
       });
 
       // Determine if we should save history
@@ -82,7 +86,8 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
               return res.status(200).json({ 
                 metrics,
                 warning: 'Metrics collected but database is unavailable. History not saved.',
-                dbError: true
+                dbError: true,
+                instanceId
               });
             }
           }
@@ -90,14 +95,16 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           // Still return metrics even if save fails
           return res.status(200).json({ 
             metrics,
-            warning: 'Metrics collected but failed to save to database for history'
+            warning: 'Metrics collected but failed to save to database for history',
+            instanceId
           });
         }
       }
 
       return res.status(200).json({ 
         metrics,
-        historySaved: shouldSaveHistory 
+        historySaved: shouldSaveHistory,
+        instanceId
       });
     } catch (error) {
       console.error('[Metrics API] Unexpected error in metrics endpoint:', error);
