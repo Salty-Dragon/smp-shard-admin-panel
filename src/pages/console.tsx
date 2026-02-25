@@ -13,7 +13,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
+import InstanceBanner from '@/components/InstanceBanner';
 import { ADMIN_ALLOWED_COMMANDS } from '@/lib/console-constants';
+import { useInstance } from '@/contexts/InstanceContext';
 
 interface ConsolePageProps {
   user: {
@@ -55,6 +57,7 @@ interface CommandResult {
 
 export default function ConsolePage({ user }: ConsolePageProps) {
   const router = useRouter();
+  const { currentInstance } = useInstance();
   const [command, setCommand] = useState('');
   const [executing, setExecuting] = useState(false);
   const [commandOutput, setCommandOutput] = useState<CommandResult[]>([]);
@@ -70,7 +73,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
     fetchCommandHistory();
     // Focus input on mount
     inputRef.current?.focus();
-  }, []);
+  }, [currentInstance]);
 
   // Auto-scroll output to bottom when new output is added
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ command: command.trim() }),
+        body: JSON.stringify({ command: command.trim(), instanceId: currentInstance }),
       });
 
       const data = await response.json();
@@ -338,6 +341,9 @@ export default function ConsolePage({ user }: ConsolePageProps) {
             </div>
           </div>
         </nav>
+
+        {/* Instance Banner */}
+        <InstanceBanner />
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
