@@ -674,6 +674,57 @@ The update management system provides automatic detection and deployment of serv
 
 For complete documentation, see [UPDATE_MANAGEMENT_DOCUMENTATION.md](UPDATE_MANAGEMENT_DOCUMENTATION.md).
 
+### Multi-Instance Database Separation
+
+The panel supports multiple Minecraft server instances sharing a single database with instance-specific data separation:
+
+#### Features
+- **Shared Database**: All instances use the same database (no need for separate databases)
+- **Instance Tagging**: Activity logs, metrics, and tasks are tagged with `instanceId`
+- **Isolated Data**: Filter logs and metrics by specific server instance
+- **Backward Compatible**: Existing deployments can migrate without data loss
+
+#### How It Works
+All database records include an optional `instanceId` field (e.g., `"s1"`, `"s2"`, `"dev"`, `"live"`):
+- **ActivityLog**: Track which instance each action was performed on
+- **ServerMetrics**: Monitor each instance's performance independently
+- **ScheduledTask**: Assign tasks to specific instances or all instances
+
+#### Migration for Existing Deployments
+If you're upgrading from a single-instance to multi-instance setup:
+
+1. **Check Migration Status**:
+   ```bash
+   GET /apanel44/api/admin/migrate-instance-data
+   ```
+
+2. **Migrate Existing Data**:
+   ```bash
+   POST /apanel44/api/admin/migrate-instance-data
+   Body: { "instanceId": "s1" }  # Use your default instance ID
+   ```
+
+3. **Verify Migration**:
+   ```bash
+   # Check that all records now have instanceId
+   SELECT COUNT(*) FROM ActivityLog WHERE instanceId IS NULL;
+   ```
+
+#### Usage Examples
+```bash
+# Execute command on specific instance
+POST /apanel44/api/server/console
+{ "command": "say Hello", "instanceId": "s1" }
+
+# Get metrics for specific instance
+GET /apanel44/api/monitoring/history?instanceId=s2&timeRange=24h
+
+# List files for specific instance
+GET /apanel44/api/files?instanceId=s1
+```
+
+For complete documentation, see [MULTI_INSTANCE_DATABASE_PREFIX.md](MULTI_INSTANCE_DATABASE_PREFIX.md).
+
 ## 🎮 Minecraft Server Integration
 
 The panel integrates with Minecraft servers to provide real-time statistics:

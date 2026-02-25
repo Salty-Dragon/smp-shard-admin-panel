@@ -86,6 +86,7 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
         userId: req.user.id,
         actionType: 'server_command',
         resource: 'console',
+        instanceId,
         details: {
           command,
           instanceId,
@@ -162,6 +163,7 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
       userId: req.user.id,
       actionType: 'server_command',
       resource: 'console',
+      instanceId: instance.id,
       details: {
         command,
         instanceId: instance.id,
@@ -200,8 +202,10 @@ async function handlePost(req: AuthenticatedRequest, res: NextApiResponse) {
         userId: req.user.id,
         actionType: 'server_command',
         resource: 'console',
+        instanceId: req.body.instanceId,
         details: {
           command: req.body.command,
+          instanceId: req.body.instanceId,
           status: 'error',
           error: error instanceof Error ? error.message : 'Unknown error'
         },

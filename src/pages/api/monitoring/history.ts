@@ -23,7 +23,8 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         limit = '1000', // Increased from 100 to support longer time ranges with aggregated data
         startDate: customStart, 
         endDate: customEnd,
-        includeAggregated = 'true'
+        includeAggregated = 'true',
+        instanceId // Filter by server instance
       } = req.query;
       
       // Calculate the date range based on the timeRange parameter or custom dates
@@ -72,6 +73,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       const whereClause: {
         timestamp: { gte: Date; lte: Date };
         isAggregated?: boolean;
+        instanceId?: string;
       } = {
         timestamp: {
           gte: startDate,
@@ -84,6 +86,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         whereClause.isAggregated = false;
       }
 
+      // Filter by instanceId if provided
+      if (instanceId && typeof instanceId === 'string') {
+        whereClause.instanceId = instanceId;
+      }
+
       // Fetch historical metrics from database
       const metrics = await prisma.serverMetrics.findMany({
         where: whereClause,
@@ -93,6 +100,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         take: parseInt(limit as string),
         select: {
           id: true,
+          instanceId: true,
           cpuUsage: true,
           memoryUsagePercent: true,
           diskUsage: true,
