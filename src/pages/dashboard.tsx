@@ -89,7 +89,6 @@ export default function Dashboard({ user, version }: DashboardProps) {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentInstance]); // Re-fetch when instance changes
-  }, []);
 
   const fetchRecentActivity = async () => {
     try {

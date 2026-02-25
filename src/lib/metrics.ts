@@ -10,9 +10,10 @@ import { getServerStatus } from './minecraft';
 
 /**
  * Collect comprehensive server metrics
+ * @param instanceId - Optional server instance ID
  * @returns Promise with metrics data
  */
-export async function collectMetrics() {
+export async function collectMetrics(instanceId?: string) {
   // CPU metrics
   const cpus = os.cpus();
   const cpuCount = cpus.length;
@@ -81,16 +82,13 @@ export async function collectMetrics() {
     // Disk usage will remain 0 if we can't fetch it
   }
   
-  // Get Minecraft server name from environment
-  const serverName = process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server';
-  
   // Player count and server status from Minecraft server
-  console.log(`[Metrics] Fetching Minecraft server status for '${serverName}'...`);
+  console.log(`[Metrics] Fetching Minecraft server status for instance: ${instanceId || 'default'}`);
   let playerCount = 0;
   let serverOnline = false;
   
   try {
-    const status = await getServerStatus(serverName);
+    const status = await getServerStatus(instanceId);
     playerCount = status.playerCount;
     serverOnline = status.online;
     console.log(`[Metrics] Server status: ${serverOnline ? 'ONLINE' : 'OFFLINE'}, Players: ${playerCount}`);
