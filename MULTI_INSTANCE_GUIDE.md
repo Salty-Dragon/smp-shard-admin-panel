@@ -7,8 +7,9 @@ This guide explains how to configure and manage multiple Minecraft server instan
 The admin panel now supports managing multiple Minecraft server instances from a single interface. Each instance can have its own:
 - Server directory and plugins folder
 - Tmux session name
-- Database connection (optional - all instances can share one database for user accounts)
 - Start script
+
+All instances share the same database connection (DATABASE_URL) for user accounts, authentication, and activity logging.
 
 ## Configuration Methods
 
@@ -27,7 +28,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/dev",
     "pluginsPath": "/opt/minecraft/dev/plugins",
     "tmuxSession": "minecraft-dev",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh",
     "description": "Development environment for testing",
     "isDefault": true
@@ -39,7 +39,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/live",
     "pluginsPath": "/opt/minecraft/live/plugins",
     "tmuxSession": "minecraft-live",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh",
     "description": "Production environment"
   }
@@ -54,7 +53,6 @@ INSTANCES='[
 - `serverPath` (required): Full path to the server directory
 - `pluginsPath` (required): Full path to the plugins directory
 - `tmuxSession` (required): Name of the tmux session running this server
-- `databaseUrl` (required): MySQL connection string (can be the same for all instances)
 - `startScript` (optional): Path to the start script (defaults to "./start.sh")
 - `description` (optional): Description shown in instance selector
 - `isDefault` (optional): Set to `true` for the default instance shown on login
@@ -143,10 +141,11 @@ systemctl restart smp-admin-panel
 
 ### Database Sharing
 
-All instances can share the same database for user accounts and authentication. The `databaseUrl` can be identical across instances. This means:
+All instances share the same database (configured via DATABASE_URL in your .env file) for user accounts and authentication. This means:
 - ✅ Users only need one account to manage all servers
 - ✅ Roles and permissions apply across all instances
 - ✅ Activity logs track which instance actions were performed on
+- ✅ No need to configure separate database connections for each instance
 
 ### Instance Isolation
 
@@ -241,7 +240,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/dev",
     "pluginsPath": "/opt/minecraft/dev/plugins",
     "tmuxSession": "mc-dev",
-    "databaseUrl": "mysql://mcadmin:password@localhost:3306/smp_admin",
     "startScript": "./start.sh",
     "description": "For plugin development and testing",
     "isDefault": true
@@ -253,7 +251,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/staging",
     "pluginsPath": "/opt/minecraft/staging/plugins",
     "tmuxSession": "mc-staging",
-    "databaseUrl": "mysql://mcadmin:password@localhost:3306/smp_admin",
     "startScript": "./start.sh",
     "description": "Pre-production testing environment"
   },
@@ -264,7 +261,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/live",
     "pluginsPath": "/opt/minecraft/live/plugins",
     "tmuxSession": "mc-live",
-    "databaseUrl": "mysql://mcadmin:password@localhost:3306/smp_admin",
     "startScript": "./start.sh",
     "description": "⚠️ Live production server - be careful!"
   }
