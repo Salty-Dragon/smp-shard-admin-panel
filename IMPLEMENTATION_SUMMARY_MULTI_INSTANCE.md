@@ -23,12 +23,13 @@ interface ServerInstance {
   serverPath: string;      // Server directory path
   pluginsPath: string;     // Plugins directory path
   tmuxSession: string;     // Tmux session name
-  databaseUrl: string;     // MySQL connection string
   startScript: string;     // Start script path
   description?: string;    // Optional description
   isDefault?: boolean;     // Default instance flag
 }
 ```
+
+**Note:** All instances share the same database connection (DATABASE_URL) for user accounts and authentication.
 
 ### 2. Library Updates
 
@@ -51,7 +52,7 @@ interface ServerInstance {
 
 **New: `src/pages/api/instances/index.ts`**
 - GET endpoint to list all available server instances
-- Returns safe instance information (excluding sensitive data like database URLs)
+- Returns safe instance information
 
 **Updated: `src/pages/api/server/console.ts`**
 - Accepts `instanceId` in request body
@@ -238,7 +239,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/dev",
     "pluginsPath": "/opt/minecraft/dev/plugins",
     "tmuxSession": "minecraft-dev",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh",
     "isDefault": true
   },
@@ -249,11 +249,12 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/live",
     "pluginsPath": "/opt/minecraft/live/plugins",
     "tmuxSession": "minecraft-live",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh"
   }
 ]'
 ```
+
+All instances share the same DATABASE_URL configured at the top of the .env file.
 
 ### Step 3: Set Up Live Server
 ```bash
@@ -290,11 +291,9 @@ systemctl restart smp-admin-panel
 
 ## Known Limitations
 
-1. **Database Per Instance**: Currently all instances share one database. If you need separate MySQL databases for each Minecraft server, configure different `databaseUrl` values (this is for user account management, not Minecraft's database)
+1. **Plugin Updates**: Plugin update detection is currently per-instance but UI may need enhancement for better multi-instance update management
 
-2. **Plugin Updates**: Plugin update detection is currently per-instance but UI may need enhancement for better multi-instance update management
-
-3. **Metrics History**: Historical metrics don't currently store instance ID (can be added if needed)
+2. **Metrics History**: Historical metrics don't currently store instance ID (can be added if needed)
 
 ## Future Enhancements
 

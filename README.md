@@ -163,7 +163,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/dev",
     "pluginsPath": "/opt/minecraft/dev/plugins",
     "tmuxSession": "minecraft-dev",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh",
     "description": "Development environment for testing",
     "isDefault": true
@@ -175,7 +174,6 @@ INSTANCES='[
     "serverPath": "/opt/minecraft/live",
     "pluginsPath": "/opt/minecraft/live/plugins",
     "tmuxSession": "minecraft-live",
-    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
     "startScript": "./start.sh",
     "description": "Production environment"
   }
@@ -185,7 +183,7 @@ INSTANCES='[
 **Features:**
 - Switch between instances using the instance selector in the UI
 - Each instance is completely isolated (files, tmux sessions, processes)
-- All instances can share the same database for user accounts
+- All instances share the same database (DATABASE_URL) for user accounts
 - Clear visual indicators prevent mistakes between dev/staging/production
 
 📖 **For detailed configuration, see [MULTI_INSTANCE_GUIDE.md](./MULTI_INSTANCE_GUIDE.md)**
