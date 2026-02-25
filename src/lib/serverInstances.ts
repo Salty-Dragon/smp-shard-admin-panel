@@ -12,7 +12,6 @@ export interface ServerInstance {
   serverPath: string;
   pluginsPath: string;
   tmuxSession: string;
-  databaseUrl: string;
   startScript: string;
   description?: string;
   isDefault?: boolean;
@@ -20,6 +19,8 @@ export interface ServerInstance {
 
 /**
  * Get all configured server instances from environment variables
+ * 
+ * All instances share the same database connection (DATABASE_URL).
  * 
  * Format for environment variables:
  * INSTANCES='[
@@ -30,7 +31,6 @@ export interface ServerInstance {
  *     "serverPath": "/opt/minecraft/dev",
  *     "pluginsPath": "/opt/minecraft/dev/plugins",
  *     "tmuxSession": "minecraft-dev",
- *     "databaseUrl": "mysql://user:pass@localhost:3306/smp_admin_dev",
  *     "startScript": "./start.sh",
  *     "description": "Development environment for testing",
  *     "isDefault": true
@@ -42,7 +42,6 @@ export interface ServerInstance {
  *     "serverPath": "/opt/minecraft/live",
  *     "pluginsPath": "/opt/minecraft/live/plugins",
  *     "tmuxSession": "minecraft-live",
- *     "databaseUrl": "mysql://user:pass@localhost:3306/smp_admin_live",
  *     "startScript": "./start.sh",
  *     "description": "Production environment"
  *   }
@@ -69,7 +68,6 @@ export function getServerInstances(): ServerInstance[] {
     serverPath: process.env.SERVER_DIR || '/opt/minecraft/server',
     pluginsPath: process.env.PLUGINS_DIR || '/opt/minecraft/dev/plugins',
     tmuxSession: process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server',
-    databaseUrl: process.env.DATABASE_URL || '',
     startScript: process.env.MINECRAFT_START_SCRIPT || './start.sh',
     description: 'Default server instance',
     isDefault: true,
@@ -117,12 +115,4 @@ export function getDefaultInstance(): ServerInstance {
 export function isValidInstanceId(instanceId: string): boolean {
   const instances = getServerInstances();
   return instances.some(i => i.id === instanceId);
-}
-
-/**
- * Get the database URL for a specific instance
- */
-export function getInstanceDatabaseUrl(instanceId?: string): string {
-  const instance = getServerInstance(instanceId);
-  return instance?.databaseUrl || process.env.DATABASE_URL || '';
 }
