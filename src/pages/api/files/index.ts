@@ -30,24 +30,25 @@ export const config = {
 };
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  // GET - List all files (supports optional path query parameter for subdirectories)
+  // GET - List all files (supports optional path and instanceId query parameters)
   if (req.method === 'GET') {
     try {
       // Get optional path parameter for subdirectory listing
       const relativePath = typeof req.query.path === 'string' ? req.query.path : '';
+      const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
       
-      const files = await listFiles(relativePath);
+      const files = await listFiles(relativePath, instanceId);
 
       // Log activity
       await logActivity({
         userId: req.user.id,
         actionType: 'list_files',
         resource: 'files',
-        details: { count: files.length, path: relativePath || 'root' },
+        details: { count: files.length, path: relativePath || 'root', instanceId },
         req,
       });
 
-      return res.status(200).json({ files, currentPath: relativePath });
+      return res.status(200).json({ files, currentPath: relativePath, instanceId });
     } catch (error) {
       console.error('Error listing files:', error);
       return res.status(500).json({
@@ -89,6 +90,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         relativePath = fields.path;
       } else if (Array.isArray(fields.path)) {
         relativePath = fields.path[0] || '';
+      }
+      
+      // Get optional instanceId parameter
+      let instanceId: string | undefined;
+      if (fields.instanceId && typeof fields.instanceId === 'string') {
+        instanceId = fields.instanceId;
+      } else if (Array.isArray(fields.instanceId)) {
+        instanceId = fields.instanceId[0] || undefined;
       }
 
       // Get the uploaded file
@@ -140,7 +149,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       const fullRelativePath = relativePath ? `${relativePath}/${sanitized}` : sanitized;
 
       // Check if file already exists
-      const exists = await fileExists(fullRelativePath);
+      const exists = await fileExists(fullRelativePath, instanceId);
       if (exists) {
         // Clean up temp file
         await fs.unlink(file.filepath).catch(() => {});
@@ -151,7 +160,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Validate and get destination path
-      const destPath = validateAndResolvePath(fullRelativePath);
+      const destPath = validateAndResolvePath(fullRelativePath, false, instanceId);
       if (!destPath) {
         // Clean up temp file
         await fs.unlink(file.filepath).catch(() => {});
@@ -183,6 +192,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           fullPath: fullRelativePath,
           size: fileSize,
           originalFilename,
+          instanceId,
         },
         req,
       });

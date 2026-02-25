@@ -1,20 +1,25 @@
 /**
  * Minecraft Server Integration Utilities
  * Provides functions to interact with Minecraft servers and retrieve player data
+ * Supports multiple server instances
  */
 
 import { tmuxSessionExists, sendCommandAndCapture } from './console';
+import { getServerInstance } from './serverInstances';
 
 /**
  * Get current player count from Minecraft server
  * Sends a 'list' command to the server console and parses the response
  * 
- * @param serverName - Name of the tmux session running the server
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<number> - Number of online players, or 0 if unable to fetch
  */
-export async function getPlayerCount(serverName: string = process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server'): Promise<number> {
+export async function getPlayerCount(instanceId?: string): Promise<number> {
   try {
-    console.log(`[Minecraft] Fetching player count for server: ${serverName}`);
+    const instance = getServerInstance(instanceId);
+    const serverName = instance?.tmuxSession || process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server';
+    
+    console.log(`[Minecraft] Fetching player count for server: ${serverName} (instance: ${instance?.id || 'default'})`);
     
     // Check if the server tmux session exists
     const sessionExists = await tmuxSessionExists(serverName);
@@ -106,12 +111,15 @@ function parsePlayerCountFromOutput(output: string): number {
  * Get list of online players from Minecraft server
  * Sends a 'list' command and parses player names
  * 
- * @param serverName - Name of the tmux session running the server
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<string[]> - Array of player names
  */
-export async function getOnlinePlayers(serverName: string = process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server'): Promise<string[]> {
+export async function getOnlinePlayers(instanceId?: string): Promise<string[]> {
   try {
-    console.log(`[Minecraft] Fetching online players for server: ${serverName}`);
+    const instance = getServerInstance(instanceId);
+    const serverName = instance?.tmuxSession || process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server';
+    
+    console.log(`[Minecraft] Fetching online players for server: ${serverName} (instance: ${instance?.id || 'default'})`);
     
     // Check if the server tmux session exists
     const sessionExists = await tmuxSessionExists(serverName);
@@ -179,17 +187,20 @@ function parsePlayerNamesFromOutput(output: string): string[] {
  * Get server status information
  * Checks if server is running and retrieves basic information
  * 
- * @param serverName - Name of the tmux session running the server
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<ServerStatus> - Server status information
  */
-export async function getServerStatus(serverName: string = process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server'): Promise<{
+export async function getServerStatus(instanceId?: string): Promise<{
   online: boolean;
   playerCount: number;
   maxPlayers: number;
   version: string;
 }> {
   try {
-    console.log(`[Minecraft] Checking server status for: ${serverName}`);
+    const instance = getServerInstance(instanceId);
+    const serverName = instance?.tmuxSession || process.env.MINECRAFT_SERVER_SESSION || 'minecraft-server';
+    
+    console.log(`[Minecraft] Checking server status for: ${serverName} (instance: ${instance?.id || 'default'})`);
     
     // Check if the server tmux session exists
     const sessionExists = await tmuxSessionExists(serverName);

@@ -2,13 +2,30 @@
  * File Management Utilities
  * 
  * This module provides utilities for file operations with security checks
+ * Supports multiple server instances
  */
 
 import path from 'path';
 import fs from 'fs/promises';
+import { getServerInstance } from './serverInstances';
 
-// Base directory for plugin files - all file operations are restricted to this directory
-export const PLUGINS_DIR = '/opt/minecraft/dev/plugins';
+// Legacy constant for backward compatibility
+// When INSTANCES env var is not set, this is used as fallback
+export const PLUGINS_DIR = process.env.PLUGINS_DIR || '/opt/minecraft/dev/plugins';
+
+/**
+ * Get the plugins directory for a specific server instance
+ * 
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
+ * @returns Plugins directory path
+ */
+export function getPluginsDir(instanceId?: string): string {
+  const instance = getServerInstance(instanceId);
+  if (instance) {
+    return instance.pluginsPath;
+  }
+  return PLUGINS_DIR;
+}
 
 // Maximum file size for .jar uploads (35MB in bytes)
 export const MAX_JAR_SIZE = 35 * 1024 * 1024;
@@ -90,12 +107,15 @@ export function sanitizePath(relativePath: string): string {
  * 
  * @param filename - Filename or relative path (can include subdirectories like "folder/file.txt")
  * @param isDirectory - Whether this is a directory path (defaults to false)
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Absolute path if valid, null if invalid
  */
-export function validateAndResolvePath(filename: string, isDirectory: boolean = false): string | null {
+export function validateAndResolvePath(filename: string, isDirectory: boolean = false, instanceId?: string): string | null {
   try {
+    const pluginsDir = getPluginsDir(instanceId);
+    
     if (!filename) {
-      return isDirectory ? PLUGINS_DIR : null;
+      return isDirectory ? pluginsDir : null;
     }
     
     // Check if this looks like a path with directories
@@ -139,11 +159,11 @@ export function validateAndResolvePath(filename: string, isDirectory: boolean = 
     }
     
     // Resolve the full path
-    const fullPath = sanitized ? path.resolve(PLUGINS_DIR, sanitized) : PLUGINS_DIR;
+    const fullPath = sanitized ? path.resolve(pluginsDir, sanitized) : pluginsDir;
     
     // Ensure the resolved path is within the plugins directory
     // This prevents path traversal attacks like ../../../etc/passwd
-    if (!fullPath.startsWith(PLUGINS_DIR + path.sep) && fullPath !== PLUGINS_DIR) {
+    if (!fullPath.startsWith(pluginsDir + path.sep) && fullPath !== pluginsDir) {
       return null;
     }
     
@@ -241,9 +261,10 @@ export function isFileSizeAllowed(size: number): boolean {
  * List all files in the plugins directory or a subdirectory
  * 
  * @param relativePath - Relative path from plugins directory root (optional)
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<Array> - Array of file information
  */
-export async function listFiles(relativePath: string = ''): Promise<Array<{
+export async function listFiles(relativePath: string = '', instanceId?: string): Promise<Array<{
   name: string;
   size: number;
   modified: Date;
@@ -252,7 +273,7 @@ export async function listFiles(relativePath: string = ''): Promise<Array<{
 }>> {
   try {
     // Validate and resolve the directory path
-    const dirPath = validateAndResolvePath(relativePath, true);
+    const dirPath = validateAndResolvePath(relativePath, true, instanceId);
     
     if (!dirPath) {
       throw new Error('Invalid directory path');
@@ -289,10 +310,11 @@ export async function listFiles(relativePath: string = ''): Promise<Array<{
  * Read file content
  * 
  * @param filename - Filename to read
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<string> - File content
  */
-export async function readFileContent(filename: string): Promise<string> {
-  const fullPath = validateAndResolvePath(filename);
+export async function readFileContent(filename: string, instanceId?: string): Promise<string> {
+  const fullPath = validateAndResolvePath(filename, false, instanceId);
   
   if (!fullPath) {
     throw new Error('Invalid file path');
@@ -312,10 +334,11 @@ export async function readFileContent(filename: string): Promise<string> {
  * 
  * @param filename - Filename to write
  * @param content - Content to write
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<void>
  */
-export async function writeFileContent(filename: string, content: string): Promise<void> {
-  const fullPath = validateAndResolvePath(filename);
+export async function writeFileContent(filename: string, content: string, instanceId?: string): Promise<void> {
+  const fullPath = validateAndResolvePath(filename, false, instanceId);
   
   if (!fullPath) {
     throw new Error('Invalid file path');
@@ -334,11 +357,12 @@ export async function writeFileContent(filename: string, content: string): Promi
  * 
  * @param oldFilename - Current filename
  * @param newFilename - New filename
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<void>
  */
-export async function renameFile(oldFilename: string, newFilename: string): Promise<void> {
-  const oldPath = validateAndResolvePath(oldFilename);
-  const newPath = validateAndResolvePath(newFilename);
+export async function renameFile(oldFilename: string, newFilename: string, instanceId?: string): Promise<void> {
+  const oldPath = validateAndResolvePath(oldFilename, false, instanceId);
+  const newPath = validateAndResolvePath(newFilename, false, instanceId);
   
   if (!oldPath || !newPath) {
     throw new Error('Invalid file path');
@@ -356,10 +380,11 @@ export async function renameFile(oldFilename: string, newFilename: string): Prom
  * Delete a file
  * 
  * @param filename - Filename to delete
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<void>
  */
-export async function deleteFile(filename: string): Promise<void> {
-  const fullPath = validateAndResolvePath(filename);
+export async function deleteFile(filename: string, instanceId?: string): Promise<void> {
+  const fullPath = validateAndResolvePath(filename, false, instanceId);
   
   if (!fullPath) {
     throw new Error('Invalid file path');
@@ -377,10 +402,11 @@ export async function deleteFile(filename: string): Promise<void> {
  * Check if a file exists
  * 
  * @param filename - Filename to check
+ * @param instanceId - Server instance ID (optional, uses default if not provided)
  * @returns Promise<boolean> - True if file exists
  */
-export async function fileExists(filename: string): Promise<boolean> {
-  const fullPath = validateAndResolvePath(filename);
+export async function fileExists(filename: string, instanceId?: string): Promise<boolean> {
+  const fullPath = validateAndResolvePath(filename, false, instanceId);
   
   if (!fullPath) {
     return false;
