@@ -1,9 +1,10 @@
 # 🎮 SMP Shard Admin Panel
 
-A comprehensive web-based administration panel for managing Minecraft SMP (Survival Multiplayer) servers. Built with Next.js, TypeScript, and TailwindCSS.
+A comprehensive web-based administration panel for managing multiple Minecraft SMP (Survival Multiplayer) servers. Built with Next.js, TypeScript, and TailwindCSS.
 
 ## 🚀 Features
 
+- **Multi-Instance Support**: Manage multiple Minecraft servers (dev, staging, live) from a single panel
 - **Next.js with TypeScript**: Modern React framework with type safety
 - **Server-Side Rendering (SSR)**: Fast initial page loads and SEO-friendly
 - **TailwindCSS**: Utility-first CSS framework for rapid UI development
@@ -13,6 +14,7 @@ A comprehensive web-based administration panel for managing Minecraft SMP (Survi
 - **Email Notifications**: SMTP integration for sending notifications and OTP codes
 - **Plugin File Management**: Upload, edit, and manage plugin files with recursive sub-folder navigation
 - **Update Management**: Automatic detection and deployment of PaperMC server and plugin updates with rollback protection
+- **Instance Isolation**: Each server instance has its own directory, tmux session, and configuration
 
 ## 📦 Tech Stack
 
@@ -143,6 +145,50 @@ smp-shard-admin-panel/
    **Note**: The application is configured with `basePath: '/apanel44'`, so all routes must be accessed with this prefix.
 
 ## ⚙️ Configuration
+
+### Multi-Instance Server Management
+
+The panel supports managing multiple Minecraft server instances (e.g., development, staging, and production servers) from a single interface. Each instance can have its own server directory, plugins folder, tmux session, and configuration.
+
+**Quick Start - Two Servers (Dev and Live):**
+
+Add this to your `.env` file:
+
+```env
+INSTANCES='[
+  {
+    "id": "dev",
+    "name": "dev",
+    "displayName": "Development Server",
+    "serverPath": "/opt/minecraft/dev",
+    "pluginsPath": "/opt/minecraft/dev/plugins",
+    "tmuxSession": "minecraft-dev",
+    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
+    "startScript": "./start.sh",
+    "description": "Development environment for testing",
+    "isDefault": true
+  },
+  {
+    "id": "live",
+    "name": "live",
+    "displayName": "Live Server",
+    "serverPath": "/opt/minecraft/live",
+    "pluginsPath": "/opt/minecraft/live/plugins",
+    "tmuxSession": "minecraft-live",
+    "databaseUrl": "mysql://user:password@localhost:3306/smp_admin_panel",
+    "startScript": "./start.sh",
+    "description": "Production environment"
+  }
+]'
+```
+
+**Features:**
+- Switch between instances using the instance selector in the UI
+- Each instance is completely isolated (files, tmux sessions, processes)
+- All instances can share the same database for user accounts
+- Clear visual indicators prevent mistakes between dev/staging/production
+
+📖 **For detailed configuration, see [MULTI_INSTANCE_GUIDE.md](./MULTI_INSTANCE_GUIDE.md)**
 
 ### Environment Variables
 
