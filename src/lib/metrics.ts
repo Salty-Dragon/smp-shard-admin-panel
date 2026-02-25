@@ -98,6 +98,7 @@ export async function collectMetrics(instanceId?: string) {
   }
 
   return {
+    instanceId: instanceId || null,
     cpuUsage: parseFloat(cpuUsage.toFixed(2)),
     cpuCount,
     memoryTotal: parseFloat(totalMemory.toFixed(2)),

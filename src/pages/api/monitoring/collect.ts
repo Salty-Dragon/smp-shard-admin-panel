@@ -40,8 +40,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       console.log('[Metrics Collection] Starting automated metrics collection...');
 
+      // Get instanceId from query parameter (optional)
+      const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
+
       // Collect system metrics using shared utility
-      const metrics = await collectMetrics();
+      const metrics = await collectMetrics(instanceId);
 
       // Save to database
       try {

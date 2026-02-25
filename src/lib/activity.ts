@@ -53,6 +53,7 @@ export interface LogActivityParams {
   resourceId?: string;
   details?: Record<string, any>;
   req?: NextApiRequest;
+  instanceId?: string; // Server instance identifier (e.g., 'dev', 'live', 's1', 's2')
 }
 
 /**
@@ -63,7 +64,7 @@ export interface LogActivityParams {
  */
 export async function logActivity(params: LogActivityParams): Promise<void> {
   try {
-    const { userId, actionType, resource, resourceId, details, req } = params;
+    const { userId, actionType, resource, resourceId, details, req, instanceId } = params;
 
     await prisma.activityLog.create({
       data: {
@@ -74,6 +75,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
         details: details ? JSON.stringify(details) : null,
         ipAddress: req ? getIpAddress(req) : null,
         userAgent: req ? req.headers['user-agent'] || null : null,
+        instanceId: instanceId || null,
       },
     });
   } catch (error) {
@@ -160,6 +162,7 @@ export async function getActivityLogs(params: {
   limit?: number;
   userId?: string;
   actionType?: ActionType;
+  instanceId?: string;
   startDate?: Date;
   endDate?: Date;
 }) {
@@ -169,6 +172,7 @@ export async function getActivityLogs(params: {
       limit = 50,
       userId,
       actionType,
+      instanceId,
       startDate,
       endDate,
     } = params;
@@ -183,6 +187,10 @@ export async function getActivityLogs(params: {
 
     if (actionType) {
       where.actionType = actionType;
+    }
+
+    if (instanceId) {
+      where.instanceId = instanceId;
     }
 
     if (startDate || endDate) {

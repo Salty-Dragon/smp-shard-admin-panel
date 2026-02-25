@@ -85,6 +85,9 @@ model ActivityLog {
   resourceId  String?  // ID of affected resource
   details     String?  @db.Text // JSON string with additional details
   
+  // Server instance identifier (for multi-instance support)
+  instanceId  String?  // e.g., 'dev', 'live', 's1', 's2'
+  
   // Request metadata
   ipAddress   String?
   userAgent   String?  @db.Text
@@ -95,6 +98,7 @@ model ActivityLog {
   @@index([userId])
   @@index([timestamp])
   @@index([actionType])
+  @@index([instanceId])
 }
 
 // Error Report model for tracking and managing error reports
@@ -142,6 +146,9 @@ model ScheduledTask {
   taskType      String   // 'backup', 'cleanup', 'ban', 'unban', 'custom'
   status        String   @default("active") // 'active', 'paused', 'completed', 'failed'
   
+  // Server instance identifier (for multi-instance support)
+  instanceId    String?  // e.g., 'dev', 'live', 's1', 's2' - null means applies to all instances
+  
   // Schedule configuration
   scheduleType  String   // 'once', 'recurring'
   cronExpression String? // For recurring tasks
@@ -164,11 +171,15 @@ model ScheduledTask {
   @@index([status])
   @@index([nextRunAt])
   @@index([taskType])
+  @@index([instanceId])
 }
 
 // Server Metrics model for storing historical monitoring data
 model ServerMetrics {
   id                String   @id @default(uuid())
+  
+  // Server instance identifier (for multi-instance support)
+  instanceId        String?  // e.g., 'dev', 'live', 's1', 's2'
   
   // CPU Metrics
   cpuUsage          Float    // Percentage
@@ -205,6 +216,8 @@ model ServerMetrics {
   @@index([timestamp])
   @@index([timestamp, isAggregated])
   @@index([isAggregated, aggregationPeriod])
+  @@index([instanceId])
+  @@index([instanceId, timestamp])
 }
 
 // Settings model for system configuration

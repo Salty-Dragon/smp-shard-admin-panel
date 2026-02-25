@@ -28,6 +28,7 @@ import {
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { filename } = req.query;
   const relativePath = typeof req.query.path === 'string' ? req.query.path : '';
+  const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
 
   // Validate filename parameter
   if (typeof filename !== 'string' || !filename) {
@@ -80,11 +81,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           actionType: 'read_file',
           resource: 'files',
           resourceId: fullRelativePath,
+          instanceId,
           details: { 
             filename: sanitized, 
             path: relativePath || 'root', 
             action: 'view_blocked',
-            reason: 'sensitive_content'
+            reason: 'sensitive_content',
+            instanceId
           },
           req,
         });
@@ -102,7 +105,8 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         actionType: 'read_file',
         resource: 'files',
         resourceId: fullRelativePath,
-        details: { filename: sanitized, path: relativePath || 'root', action: 'view' },
+        instanceId,
+        details: { filename: sanitized, path: relativePath || 'root', action: 'view', instanceId },
         req,
       });
 
@@ -144,11 +148,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
             actionType: 'rename_file',
             resource: 'files',
             resourceId: fullRelativePath,
+            instanceId,
             details: {
               filename: sanitized,
               path: relativePath || 'root',
               action: 'rename_blocked',
               reason: 'config_file_protection',
+              instanceId
             },
             req,
           });
@@ -189,12 +195,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           actionType: 'rename_file',
           resource: 'files',
           resourceId: fullRelativePath,
+          instanceId,
           details: {
             oldFilename: sanitized,
             newFilename: sanitizedNewFilename,
             path: relativePath || 'root',
             oldFullPath: fullRelativePath,
             newFullPath: newFullRelativePath,
+            instanceId
           },
           req,
         });
@@ -233,11 +241,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
             actionType: 'edit_file',
             resource: 'files',
             resourceId: fullRelativePath,
+            instanceId,
             details: {
               filename: sanitized,
               path: relativePath || 'root',
               action: 'edit_blocked',
               reason: 'sensitive_content',
+              instanceId
             },
             req,
           });
@@ -258,10 +268,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           actionType: 'edit_file',
           resource: 'files',
           resourceId: fullRelativePath,
+          instanceId,
           details: {
             filename: sanitized,
             path: relativePath || 'root',
             contentLength: content.length,
+            instanceId
           },
           req,
         });
@@ -319,11 +331,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           actionType: 'delete_file',
           resource: 'files',
           resourceId: fullRelativePath,
+          instanceId,
           details: {
             filename: sanitized,
             path: relativePath || 'root',
             action: 'delete_blocked',
             reason: 'config_file_protection',
+            instanceId
           },
           req,
         });
@@ -343,7 +357,8 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         actionType: 'delete_file',
         resource: 'files',
         resourceId: fullRelativePath,
-        details: { filename: sanitized, path: relativePath || 'root' },
+        instanceId,
+        details: { filename: sanitized, path: relativePath || 'root', instanceId },
         req,
       });
 

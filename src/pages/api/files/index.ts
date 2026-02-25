@@ -44,6 +44,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         userId: req.user.id,
         actionType: 'list_files',
         resource: 'files',
+        instanceId,
         details: { count: files.length, path: relativePath || 'root', instanceId },
         req,
       });
@@ -186,6 +187,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         actionType: 'upload_file',
         resource: 'files',
         resourceId: fullRelativePath,
+        instanceId,
         details: {
           filename: sanitized,
           path: relativePath || 'root',
