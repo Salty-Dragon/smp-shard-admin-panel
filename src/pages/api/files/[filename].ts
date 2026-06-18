@@ -19,11 +19,10 @@ import {
   deleteFile,
   fileExists,
   sanitizeFilename,
-  sanitizePath,
   isEditAllowed,
   isConfigFile,
-  hasSensitiveContent,
 } from '@/lib/fileUtils';
+import { createBackup } from '@/lib/backups';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const { filename } = req.query;
@@ -54,7 +53,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
       // Check if file exists
-      const exists = await fileExists(fullRelativePath);
+      const exists = await fileExists(fullRelativePath, instanceId);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -71,33 +70,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       // Read file content
-      const content = await readFileContent(fullRelativePath);
-
-      // Check if file contains sensitive information (MySQL credentials)
-      if (hasSensitiveContent(content)) {
-        // Log attempt to access sensitive file
-        await logActivity({
-          userId: req.user.id,
-          actionType: 'read_file',
-          resource: 'files',
-          resourceId: fullRelativePath,
-          instanceId,
-          details: { 
-            filename: sanitized, 
-            path: relativePath || 'root', 
-            action: 'view_blocked',
-            reason: 'sensitive_content',
-            instanceId
-          },
-          req,
-        });
-
-        return res.status(403).json({
-          error: 'Sensitive content',
-          message: 'This file contains sensitive information (MySQL credentials) and can only be modified via direct SSH access.',
-          sensitive: true,
-        });
-      }
+      const content = await readFileContent(fullRelativePath, instanceId);
 
       // Log activity
       await logActivity({
@@ -128,7 +101,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'PUT') {
     try {
       // Check if file exists
-      const exists = await fileExists(fullRelativePath);
+      const exists = await fileExists(fullRelativePath, instanceId);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -178,7 +151,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         const newFullRelativePath = relativePath ? `${relativePath}/${sanitizedNewFilename}` : sanitizedNewFilename;
 
         // Check if new filename already exists
-        const newExists = await fileExists(newFullRelativePath);
+        const newExists = await fileExists(newFullRelativePath, instanceId);
         if (newExists) {
           return res.status(409).json({
             error: 'File exists',
@@ -187,7 +160,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         }
 
         // Rename the file
-        await renameFile(fullRelativePath, newFullRelativePath);
+        await renameFile(fullRelativePath, newFullRelativePath, instanceId);
 
         // Log activity
         await logActivity({
@@ -233,34 +206,18 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           });
         }
 
-        // Check if the new content contains sensitive information
-        if (hasSensitiveContent(content)) {
-          // Log blocked edit attempt
-          await logActivity({
-            userId: req.user.id,
-            actionType: 'edit_file',
-            resource: 'files',
-            resourceId: fullRelativePath,
-            instanceId,
-            details: {
-              filename: sanitized,
-              path: relativePath || 'root',
-              action: 'edit_blocked',
-              reason: 'sensitive_content',
-              instanceId
-            },
-            req,
-          });
-
-          return res.status(403).json({
-            error: 'Sensitive content',
-            message: 'This file contains sensitive information (MySQL credentials) and can only be modified via direct SSH access.',
-            sensitive: true,
-          });
+        // Snapshot the current content before overwriting so the edit can be
+        // restored from the panel. Best-effort: never block a save on backup.
+        let backupId: string | null = null;
+        try {
+          const backup = await createBackup(fullRelativePath, instanceId);
+          backupId = backup?.id ?? null;
+        } catch (backupError) {
+          console.error('Error creating backup before edit:', backupError);
         }
 
         // Write new content
-        await writeFileContent(fullRelativePath, content);
+        await writeFileContent(fullRelativePath, content, instanceId);
 
         // Log activity
         await logActivity({
@@ -273,6 +230,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
             filename: sanitized,
             path: relativePath || 'root',
             contentLength: content.length,
+            backupId,
             instanceId
           },
           req,
@@ -315,7 +273,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method === 'DELETE') {
     try {
       // Check if file exists
-      const exists = await fileExists(fullRelativePath);
+      const exists = await fileExists(fullRelativePath, instanceId);
       if (!exists) {
         return res.status(404).json({
           error: 'Not found',
@@ -348,8 +306,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         });
       }
 
+      // Snapshot the file before deleting so it can be restored from the panel.
+      let backupId: string | null = null;
+      try {
+        const backup = await createBackup(fullRelativePath, instanceId);
+        backupId = backup?.id ?? null;
+      } catch (backupError) {
+        console.error('Error creating backup before delete:', backupError);
+      }
+
       // Delete the file
-      await deleteFile(fullRelativePath);
+      await deleteFile(fullRelativePath, instanceId);
 
       // Log activity
       await logActivity({
@@ -358,7 +325,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         resource: 'files',
         resourceId: fullRelativePath,
         instanceId,
-        details: { filename: sanitized, path: relativePath || 'root', instanceId },
+        details: { filename: sanitized, path: relativePath || 'root', backupId, instanceId },
         req,
       });
 

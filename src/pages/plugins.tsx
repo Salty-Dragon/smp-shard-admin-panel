@@ -44,6 +44,12 @@ interface ToastMessage {
   type: 'success' | 'error' | 'info' | 'warning';
 }
 
+interface BackupInfo {
+  id: string;
+  createdAt: string;
+  size: number;
+}
+
 export default function Plugins({ user }: PluginsProps) {
   const { currentInstance } = useInstance();
   const [files, setFiles] = useState<FileInfo[]>([]);
@@ -61,9 +67,34 @@ export default function Plugins({ user }: PluginsProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+  const [showBackupsModal, setShowBackupsModal] = useState(false);
+  const [backups, setBackups] = useState<BackupInfo[]>([]);
+  const [backupsFile, setBackupsFile] = useState<{ name: string; path: string } | null>(null);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [restoringBackupId, setRestoringBackupId] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, FileInfo[]>>({});
   const [loadingFolders, setLoadingFolders] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Build a URL for the per-file API, always carrying the selected instance so
+  // edits/reads target the correct server (dev vs live), including nested
+  // plugin config folders.
+  const buildFileUrl = useCallback((name: string, pathToUse: string) => {
+    const params = new URLSearchParams();
+    if (pathToUse) params.set('path', pathToUse);
+    if (currentInstance) params.set('instanceId', currentInstance);
+    const qs = params.toString();
+    return `/apanel44/api/files/${encodeURIComponent(name)}${qs ? `?${qs}` : ''}`;
+  }, [currentInstance]);
+
+  // Build a URL for the backups API for a given file.
+  const buildBackupsUrl = useCallback((name: string, pathToUse: string) => {
+    const params = new URLSearchParams();
+    params.set('filename', name);
+    if (pathToUse) params.set('path', pathToUse);
+    if (currentInstance) params.set('instanceId', currentInstance);
+    return `/apanel44/api/files/backups?${params.toString()}`;
+  }, [currentInstance]);
 
   const fetchFiles = useCallback(async (path: string = '') => {
     try {
@@ -188,10 +219,7 @@ export default function Plugins({ user }: PluginsProps) {
     try {
       setIsSaving(true);
       const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
-      const url = pathToUse 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
-        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
-      const response = await fetch(url, {
+      const response = await fetch(buildFileUrl(selectedFile.name, pathToUse), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -223,10 +251,7 @@ export default function Plugins({ user }: PluginsProps) {
     try {
       setIsRenaming(true);
       const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
-      const url = pathToUse 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
-        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
-      const response = await fetch(url, {
+      const response = await fetch(buildFileUrl(selectedFile.name, pathToUse), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -258,10 +283,7 @@ export default function Plugins({ user }: PluginsProps) {
     try {
       setIsDeleting(true);
       const pathToUse = (selectedFile as FileInfo & { _relativePath?: string })._relativePath || currentPath;
-      const url = pathToUse 
-        ? `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}?path=${encodeURIComponent(pathToUse)}`
-        : `/apanel44/api/files/${encodeURIComponent(selectedFile.name)}`;
-      const response = await fetch(url, {
+      const response = await fetch(buildFileUrl(selectedFile.name, pathToUse), {
         method: 'DELETE',
       });
 
@@ -293,10 +315,7 @@ export default function Plugins({ user }: PluginsProps) {
     }
 
     try {
-      const url = pathToUse 
-        ? `/apanel44/api/files/${encodeURIComponent(fileWithPath.name)}?path=${encodeURIComponent(pathToUse)}`
-        : `/apanel44/api/files/${encodeURIComponent(fileWithPath.name)}`;
-      const response = await fetch(url);
+      const response = await fetch(buildFileUrl(fileWithPath.name, pathToUse));
       if (response.ok) {
         const data = await response.json();
         setEditedContent(data.content);
@@ -324,6 +343,74 @@ export default function Plugins({ user }: PluginsProps) {
     // Store the file with its path info
     setSelectedFile({ ...fileWithPath, _relativePath: fileWithPath._relativePath || currentPath } as FileInfo);
     setShowDeleteModal(true);
+  };
+
+  const fetchBackups = useCallback(async (name: string, path: string) => {
+    setLoadingBackups(true);
+    try {
+      const response = await fetch(buildBackupsUrl(name, path));
+      if (response.ok) {
+        const data = await response.json();
+        setBackups(data.backups || []);
+      } else {
+        const data = await response.json().catch(() => ({ message: 'Failed to load backups' }));
+        setToast({ message: data.message || 'Failed to load backups', type: 'error' });
+        setBackups([]);
+      }
+    } catch (error) {
+      console.error('Error loading backups:', error);
+      setToast({ message: 'Error loading backups', type: 'error' });
+      setBackups([]);
+    } finally {
+      setLoadingBackups(false);
+    }
+  }, [buildBackupsUrl]);
+
+  const openBackupsModalWithPath = (fileWithPath: FileInfo & { _relativePath?: string }) => {
+    const path = fileWithPath._relativePath || currentPath;
+    setBackupsFile({ name: fileWithPath.name, path });
+    setBackups([]);
+    setShowBackupsModal(true);
+    fetchBackups(fileWithPath.name, path);
+  };
+
+  const handleRestoreBackup = async (backupId: string) => {
+    if (!backupsFile) return;
+    try {
+      setRestoringBackupId(backupId);
+      const response = await fetch('/apanel44/api/files/backups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: backupsFile.name,
+          path: backupsFile.path,
+          instanceId: currentInstance || undefined,
+          backupId,
+        }),
+      });
+      if (response.ok) {
+        setToast({ message: 'File restored from backup', type: 'success' });
+        // The restore itself snapshots the prior content, so refresh the list.
+        fetchBackups(backupsFile.name, backupsFile.path);
+        fetchFiles(currentPath);
+        // If the edit modal is open on this file, reload its content.
+        if (showEditModal && selectedFile?.name === backupsFile.name) {
+          const refreshed = await fetch(buildFileUrl(backupsFile.name, backupsFile.path));
+          if (refreshed.ok) {
+            const data = await refreshed.json();
+            setEditedContent(data.content);
+          }
+        }
+      } else {
+        const data = await response.json().catch(() => ({ message: 'Failed to restore backup' }));
+        setToast({ message: data.message || 'Failed to restore backup', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error restoring backup:', error);
+      setToast({ message: 'Error restoring backup', type: 'error' });
+    } finally {
+      setRestoringBackupId(null);
+    }
   };
 
   const navigateToFolder = (folderPath: string) => {
@@ -508,10 +595,20 @@ export default function Plugins({ user }: PluginsProps) {
               <button
                 onClick={() => handleEditFileWithPath(fileWithPath)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 border-b-2 border-blue-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
-                title={isConfig ? "Edit file (sensitive files will be blocked automatically)" : "Edit file"}
+                title="Edit file"
                 aria-label={`Edit ${file.name}`}
               >
                 ✏️ Edit
+              </button>
+            )}
+            {isEditable(file) && (
+              <button
+                onClick={() => openBackupsModalWithPath(fileWithPath)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 border-b-2 border-purple-800 active:border-b-0 active:mt-[2px] font-semibold text-sm"
+                title="View and restore backups"
+                aria-label={`Backups for ${file.name}`}
+              >
+                🗂️ Backups
               </button>
             )}
             <button
@@ -857,24 +954,42 @@ export default function Plugins({ user }: PluginsProps) {
               aria-describedby="file-content-description"
             />
           </div>
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={() => {
-                setShowEditModal(false);
-                setEditedContent('');
-              }}
-              className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveFile}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : '💾 Save Changes'}
-            </button>
+          <div className="flex justify-between items-center">
+            <p className="text-stone-400 text-xs">
+              A backup is saved automatically every time you save changes.
+            </p>
+            <div className="flex justify-end space-x-3">
+              {selectedFile && (
+                <button
+                  onClick={() =>
+                    openBackupsModalWithPath(
+                      selectedFile as FileInfo & { _relativePath?: string }
+                    )
+                  }
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 border-b-4 border-purple-800 active:border-b-0 active:mt-1 font-semibold"
+                  disabled={isSaving}
+                >
+                  🗂️ Backups
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditedContent('');
+                }}
+                className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveFile}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : '💾 Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       </Modal>
@@ -959,6 +1074,90 @@ export default function Plugins({ user }: PluginsProps) {
               disabled={isDeleting}
             >
               {isDeleting ? 'Deleting...' : '🗑️ Delete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Backups Modal */}
+      <Modal
+        isOpen={showBackupsModal}
+        onClose={() => {
+          setShowBackupsModal(false);
+          setBackups([]);
+          setBackupsFile(null);
+        }}
+        title={`Backups${backupsFile ? ` — ${backupsFile.name}` : ''}`}
+        size="large"
+      >
+        <div className="space-y-4">
+          <p className="text-stone-400 text-sm">
+            Restoring overwrites the current file with the selected backup. The current
+            content is itself backed up first, so a restore can always be undone.
+          </p>
+          {loadingBackups ? (
+            <div className="text-center py-8">
+              <Spinner size="large" message="Loading backups..." />
+            </div>
+          ) : backups.length === 0 ? (
+            <div className="text-center py-8 text-stone-400">
+              <p className="text-2xl mb-2">🗂️</p>
+              <p>No backups yet</p>
+              <p className="text-sm mt-2">A backup is created the next time this file is edited.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-stone-900 border-2 border-stone-700">
+                    <th className="text-left p-3 text-green-400 font-semibold">Created</th>
+                    <th className="text-left p-3 text-green-400 font-semibold">Size</th>
+                    <th className="text-right p-3 text-green-400 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {backups.map((backup, index) => (
+                    <tr
+                      key={backup.id}
+                      className={`border-b-2 border-stone-700 ${
+                        index % 2 === 0 ? 'bg-stone-900/50' : 'bg-stone-900'
+                      }`}
+                    >
+                      <td className="p-3 text-white">
+                        {formatDate(backup.createdAt)}
+                        {index === 0 && (
+                          <span className="ml-2 text-xs bg-green-700 text-white px-2 py-0.5 rounded font-semibold">
+                            latest
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 text-stone-300">{formatFileSize(backup.size)}</td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleRestoreBackup(backup.id)}
+                          disabled={restoringBackupId !== null}
+                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 border-b-2 border-yellow-800 active:border-b-0 active:mt-[2px] font-semibold text-sm disabled:opacity-50"
+                          aria-label={`Restore backup from ${formatDate(backup.createdAt)}`}
+                        >
+                          {restoringBackupId === backup.id ? 'Restoring...' : '↩️ Restore'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                setShowBackupsModal(false);
+                setBackups([]);
+                setBackupsFile(null);
+              }}
+              className="bg-stone-600 hover:bg-stone-700 text-white px-6 py-2 border-b-4 border-stone-800 active:border-b-0 active:mt-1 font-semibold"
+            >
+              Close
             </button>
           </div>
         </div>

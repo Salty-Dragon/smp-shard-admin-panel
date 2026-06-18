@@ -44,6 +44,7 @@ export type ActionType =
   | 'delete_file'
   | 'list_files'
   | 'read_file'
+  | 'restore_file'
   | 'plugin_update';
 
 export interface LogActivityParams {

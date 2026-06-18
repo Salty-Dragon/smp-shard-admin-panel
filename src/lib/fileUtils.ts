@@ -209,44 +209,6 @@ export function isConfigFile(filename: string): boolean {
   return ALLOWED_EDIT_EXTENSIONS.includes(ext);
 }
 
-// Constants for sensitive content detection (defined once to avoid allocations)
-const MYSQL_KEYWORDS = ['mysql', 'mariadb', 'jdbc:mysql'];
-const CREDENTIAL_KEYWORDS = ['password', 'passwd', 'pwd'];
-
-// Regex patterns for detecting MySQL/database credentials
-const SENSITIVE_PATTERNS = [
-  // Pattern 1: Key-value pairs with password (e.g., "password: secret" or "password=secret")
-  /(?:password|passwd|pwd)\s*[:=]\s*\S+/i,
-  
-  // Pattern 2: JDBC connection strings with credentials
-  /jdbc:(?:mysql|mariadb):\/\/.*(?:password|user)=/i,
-  
-  // Pattern 3: Database configuration blocks with user/password fields (limited to 500 chars for performance)
-  /(?:mysql|mariadb|database)\s*[:{][\s\S]{0,500}?(?:password|passwd|user|username)/i,
-];
-
-/**
- * Detect if file content contains sensitive information like MySQL credentials
- * Uses pattern matching to identify database credentials in configuration files
- * 
- * @param content - File content to check
- * @returns True if content contains sensitive information
- */
-export function hasSensitiveContent(content: string): boolean {
-  const lowerContent = content.toLowerCase();
-  
-  // Check if any pattern matches
-  const hasCredentialPattern = SENSITIVE_PATTERNS.some(pattern => pattern.test(content));
-  
-  // Fallback to keyword-based detection for simpler configurations
-  // Only flag if we have BOTH MySQL reference AND credentials (not just user keyword)
-  const hasMysqlRef = MYSQL_KEYWORDS.some(keyword => lowerContent.includes(keyword));
-  const hasCredentials = CREDENTIAL_KEYWORDS.some(keyword => lowerContent.includes(keyword));
-  
-  // Consider content sensitive if it matches a pattern OR has MySQL + password
-  return hasCredentialPattern || (hasMysqlRef && hasCredentials);
-}
-
 /**
  * Check if a file size is within the allowed limit for uploads
  * 
