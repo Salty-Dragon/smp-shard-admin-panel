@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Modal from './Modal';
 import Spinner from './Spinner';
+import { useInstance } from '@/contexts/InstanceContext';
 
 interface ServerVersion {
   currentVersion: string;
@@ -17,6 +18,7 @@ interface ServerVersion {
 }
 
 export default function ServerVersionCard() {
+  const { currentInstance } = useInstance();
   const [version, setVersion] = useState<ServerVersion | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +30,17 @@ export default function ServerVersionCard() {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch('/apanel44/api/server/version');
-      
+
+      const url = currentInstance
+        ? `/apanel44/api/server/version?instanceId=${encodeURIComponent(currentInstance)}`
+        : '/apanel44/api/server/version';
+      const response = await fetch(url);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to fetch version' }));
         throw new Error(errorData.message || 'Failed to fetch server version');
       }
-      
+
       const data = await response.json();
       setVersion(data);
     } catch (err) {
@@ -44,14 +49,14 @@ export default function ServerVersionCard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentInstance]);
 
   useEffect(() => {
     fetchVersion();
-    
+
     // Auto-refresh every 5 minutes
     const interval = setInterval(fetchVersion, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [fetchVersion]);
 
@@ -74,6 +79,7 @@ export default function ServerVersionCard() {
         },
         body: JSON.stringify({
           targetBuild: version.latestBuild,
+          instanceId: currentInstance || undefined,
         }),
       });
       

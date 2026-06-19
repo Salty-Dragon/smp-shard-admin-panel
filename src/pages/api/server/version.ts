@@ -15,11 +15,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
 
   try {
-    const serverDir = process.env.SERVER_DIR || '/opt/minecraft/server';
-    
-    // Check for updates
-    const versionInfo: PaperMCVersion = await checkForUpdates(serverDir);
-    
+    const instanceId = typeof req.query.instanceId === 'string' ? req.query.instanceId : undefined;
+
+    // Check for updates against the selected server instance (dev/live)
+    const versionInfo: PaperMCVersion = await checkForUpdates(instanceId);
+
     return res.status(200).json(versionInfo);
   } catch (error) {
     console.error('Error checking server version:', error);

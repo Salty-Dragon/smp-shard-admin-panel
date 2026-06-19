@@ -8,9 +8,24 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
+import { getServerInstance } from './serverInstances';
 
-// Default server directory (can be overridden by environment variable)
+// Last-resort fallback if no instances and no SERVER_DIR are configured.
 const DEFAULT_SERVER_DIR = '/opt/minecraft/server';
+
+/**
+ * Resolve the server directory for a given instance.
+ *
+ * Prefers the selected server instance's path (e.g. /opt/minecraft/dev or
+ * /opt/minecraft/live), falling back to legacy SERVER_DIR, then the default.
+ *
+ * @param instanceId - Server instance ID (optional, uses default instance)
+ * @returns Absolute path to the server directory
+ */
+export function resolveServerDir(instanceId?: string): string {
+  const instance = getServerInstance(instanceId);
+  return instance?.serverPath || process.env.SERVER_DIR || DEFAULT_SERVER_DIR;
+}
 
 export interface PaperMCVersion {
   currentVersion: string;
@@ -58,20 +73,33 @@ async function parseVersionFromHistory(
     const historyPath = path.join(serverDir, 'version_history.json');
     const historyData = await fs.readFile(historyPath, 'utf-8');
     const history = JSON.parse(historyData);
-    
-    // Get the current version from the history
-    if (history.currentVersion) {
-      const version = history.currentVersion;
-      // Parse version string (e.g., "1.21.1-123" -> version: "1.21.1", build: 123)
-      const match = version.match(/^(.+)-(\d+)$/);
-      if (match) {
-        return {
-          version: match[1],
-          build: parseInt(match[2], 10),
-        };
-      }
+
+    const raw = history.currentVersion;
+    if (typeof raw !== 'string') {
+      return null;
     }
-    
+
+    // Modern Paper format: "1.21.11-127-bd74bf6 (MC: 1.21.11)"
+    //   mcVersion comes from the "(MC: ...)" suffix; build is the number between
+    //   the version and the commit hash.
+    const mcMatch = raw.match(/\(MC:\s*([^)]+)\)/);
+    const buildMatch = raw.match(/-(\d+)-[0-9a-fA-F]+\s*\(MC:/);
+    if (mcMatch && buildMatch) {
+      return {
+        version: mcMatch[1].trim(),
+        build: parseInt(buildMatch[1], 10),
+      };
+    }
+
+    // Legacy/simple format: "1.21.1-123" -> version: "1.21.1", build: 123
+    const simple = raw.match(/^(.+)-(\d+)$/);
+    if (simple) {
+      return {
+        version: simple[1],
+        build: parseInt(simple[2], 10),
+      };
+    }
+
     return null;
   } catch (error) {
     // File might not exist
@@ -119,15 +147,15 @@ async function parseVersionFromJarFilename(
 
 /**
  * Get current server version information
- * 
- * @param serverDir - Server directory path (optional, defaults to env or constant)
+ *
+ * @param instanceId - Server instance ID (optional, uses default instance)
  * @returns Promise<{version: string, build: number} | null> - Current version info or null
  */
 export async function getCurrentVersion(
-  serverDir?: string
+  instanceId?: string
 ): Promise<{ version: string; build: number } | null> {
-  const dir = serverDir || process.env.SERVER_DIR || DEFAULT_SERVER_DIR;
-  
+  const dir = resolveServerDir(instanceId);
+
   // Try version_history.json first
   let versionInfo = await parseVersionFromHistory(dir);
   
@@ -158,12 +186,12 @@ export async function getLatestBuild(mcVersion: string): Promise<number> {
 
 /**
  * Check for server updates
- * 
- * @param serverDir - Server directory path (optional, defaults to env or constant)
+ *
+ * @param instanceId - Server instance ID (optional, uses default instance)
  * @returns Promise<PaperMCVersion> - Version information with update status
  */
-export async function checkForUpdates(serverDir?: string): Promise<PaperMCVersion> {
-  const currentVersion = await getCurrentVersion(serverDir);
+export async function checkForUpdates(instanceId?: string): Promise<PaperMCVersion> {
+  const currentVersion = await getCurrentVersion(instanceId);
   
   if (!currentVersion) {
     throw new Error('Could not determine current server version');
@@ -229,13 +257,13 @@ export async function downloadBuild(
 
 /**
  * Get the current jar filename
- * 
- * @param serverDir - Server directory path (optional, defaults to env or constant)
+ *
+ * @param instanceId - Server instance ID (optional, uses default instance)
  * @returns Promise<string | null> - Current jar filename or null
  */
-export async function getCurrentJarFilename(serverDir?: string): Promise<string | null> {
-  const dir = serverDir || process.env.SERVER_DIR || DEFAULT_SERVER_DIR;
-  
+export async function getCurrentJarFilename(instanceId?: string): Promise<string | null> {
+  const dir = resolveServerDir(instanceId);
+
   try {
     const files = await fs.readdir(dir);
     

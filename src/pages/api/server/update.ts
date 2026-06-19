@@ -8,13 +8,15 @@
 import { NextApiResponse } from 'next';
 import { withSuperAdmin, AuthenticatedRequest } from '@/lib/middleware';
 import { logActivity } from '@/lib/activity';
-import { downloadBuild, getCurrentJarFilename } from '@/lib/papermc';
+import { downloadBuild, getCurrentJarFilename, resolveServerDir } from '@/lib/papermc';
+import { getServerInstance } from '@/lib/serverInstances';
 import { tmuxSessionExists, sendCommandAndCapture, executeScriptInTmux } from '@/lib/console';
 import path from 'path';
 import fs from 'fs/promises';
 
 interface UpdateRequestBody {
   targetBuild: number;
+  instanceId?: string;
 }
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
@@ -23,7 +25,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
 
   try {
-    const { targetBuild } = req.body as UpdateRequestBody;
+    const { targetBuild, instanceId } = req.body as UpdateRequestBody;
 
     if (!targetBuild || typeof targetBuild !== 'number') {
       return res.status(400).json({
@@ -32,12 +34,19 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       });
     }
 
-    const serverDir = process.env.SERVER_DIR || '/opt/minecraft/server';
-    const sessionName = process.env.TMUX_SESSION_NAME || process.env.MINECRAFT_SERVER_SESSION || 'minecraft';
-    const startScript = process.env.MINECRAFT_START_SCRIPT || './start.sh';
+    // Resolve all paths/sessions from the selected server instance (dev/live)
+    // so the update targets the right server.
+    const instance = getServerInstance(instanceId);
+    const serverDir = resolveServerDir(instanceId);
+    const sessionName =
+      instance?.tmuxSession ||
+      process.env.TMUX_SESSION_NAME ||
+      process.env.MINECRAFT_SERVER_SESSION ||
+      'minecraft';
+    const startScript = instance?.startScript || process.env.MINECRAFT_START_SCRIPT || './start.sh';
 
     // Get current jar filename
-    const currentJar = await getCurrentJarFilename(serverDir);
+    const currentJar = await getCurrentJarFilename(instanceId);
     if (!currentJar) {
       return res.status(404).json({
         error: 'Not found',
@@ -152,11 +161,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       userId: req.user.id,
       actionType: 'server_update',
       resource: 'papermc_server',
+      instanceId,
       details: {
         mcVersion,
         fromBuild: parseInt(versionMatch[2], 10),
         toBuild: targetBuild,
         filename: newJarFilename,
+        instanceId,
       },
       req,
     });
