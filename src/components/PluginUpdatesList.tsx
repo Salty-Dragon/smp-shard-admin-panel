@@ -4,8 +4,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { RefreshCw, ExternalLink, AlertTriangle, PackageCheck } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
+import Button from './Button';
+import { cn } from '@/lib/cn';
 
 interface PluginInfo {
   name: string;
@@ -39,14 +42,14 @@ export default function PluginUpdatesList() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch('/apanel44/api/plugins/updates');
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to fetch plugins' }));
         throw new Error(errorData.message || 'Failed to fetch plugin updates');
       }
-      
+
       const pluginData = await response.json();
       setData(pluginData);
     } catch (err) {
@@ -68,11 +71,11 @@ export default function PluginUpdatesList() {
 
   const handleConfirmUpdate = async () => {
     if (!selectedPlugin || !selectedPlugin.downloadUrl) return;
-    
+
     setShowConfirmModal(false);
     setUpdatingPlugin(selectedPlugin.filename);
     setUpdateMessage(null);
-    
+
     try {
       const response = await fetch('/apanel44/api/plugins/deploy-update', {
         method: 'POST',
@@ -84,19 +87,19 @@ export default function PluginUpdatesList() {
           downloadUrl: selectedPlugin.downloadUrl,
         }),
       });
-      
+
       const responseData = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(responseData.message || 'Failed to update plugin');
       }
-      
+
       setUpdateMessage({
         plugin: selectedPlugin.filename,
         message: `Successfully updated to ${selectedPlugin.latestVersion}`,
         success: true,
       });
-      
+
       // Refresh plugin list after successful update
       setTimeout(fetchPlugins, 2000);
     } catch (err) {
@@ -114,17 +117,17 @@ export default function PluginUpdatesList() {
 
   const getSourceBadge = (source?: string) => {
     const badges = {
-      hangar: { color: 'bg-blue-900/30 border-blue-700 text-blue-400', label: 'Hangar' },
-      modrinth: { color: 'bg-green-900/30 border-green-700 text-green-400', label: 'Modrinth' },
-      spiget: { color: 'bg-orange-900/30 border-orange-700 text-orange-400', label: 'Spiget' },
-      manual: { color: 'bg-purple-900/30 border-purple-700 text-purple-400', label: 'Manual' },
-      none: { color: 'bg-stone-700/30 border-stone-600 text-stone-400', label: 'Unknown' },
+      hangar: { color: 'bg-blue-500/10 border-blue-500/30 text-blue-300', label: 'Hangar' },
+      modrinth: { color: 'bg-green-500/10 border-green-500/30 text-green-400', label: 'Modrinth' },
+      spiget: { color: 'bg-orange-500/10 border-orange-500/30 text-orange-300', label: 'Spiget' },
+      manual: { color: 'bg-purple-500/10 border-purple-500/30 text-purple-300', label: 'Manual' },
+      none: { color: 'bg-white/5 border-white/10 text-gray-400', label: 'Unknown' },
     };
-    
+
     const badge = badges[source as keyof typeof badges] || badges.none;
-    
+
     return (
-      <span className={`inline-flex items-center px-2 py-1 text-xs border rounded ${badge.color}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 text-xs border rounded-full ${badge.color}`}>
         {badge.label}
       </span>
     );
@@ -132,25 +135,22 @@ export default function PluginUpdatesList() {
 
   if (loading && !data) {
     return (
-      <div className="bg-stone-800 border-2 border-stone-700 p-6 rounded-lg">
-        <Spinner size="medium" message="Checking for plugin updates..." />
+      <div className="glass rounded-2xl border border-green-500/20 p-6">
+        <Spinner size="medium" message="Checking for plugin updates…" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-stone-800 border-2 border-stone-700 p-6 rounded-lg">
+      <div className="glass rounded-2xl border border-red-500/20 p-6">
         <div className="text-center">
-          <div className="text-red-400 text-4xl mb-2">⚠</div>
+          <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-red-400" />
           <h3 className="text-lg font-semibold text-white mb-2">Error Loading Plugins</h3>
-          <p className="text-stone-400 text-sm mb-4">{error}</p>
-          <button
-            onClick={fetchPlugins}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-          >
-            Retry
-          </button>
+          <p className="text-gray-400 text-sm mb-4">{error}</p>
+          <Button variant="secondary" onClick={fetchPlugins} className="mx-auto">
+            <RefreshCw className="h-4 w-4" /> Retry
+          </Button>
         </div>
       </div>
     );
@@ -162,12 +162,14 @@ export default function PluginUpdatesList() {
 
   return (
     <>
-      <div className="bg-stone-800 border-2 border-stone-700 rounded-lg overflow-hidden">
+      <div className="glass rounded-2xl border border-green-500/20 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b-2 border-stone-700">
+        <div className="flex items-center justify-between p-6 border-b border-green-500/10">
           <div>
-            <h3 className="text-lg font-semibold text-green-400">Plugin Updates</h3>
-            <p className="text-stone-400 text-sm mt-1">
+            <h3 className="text-lg font-semibold text-green-400 flex items-center gap-2">
+              <PackageCheck className="h-5 w-5" /> Plugin Updates
+            </h3>
+            <p className="text-gray-400 text-sm mt-1">
               {data.updatesAvailable > 0
                 ? `${data.updatesAvailable} update${data.updatesAvailable !== 1 ? 's' : ''} available`
                 : 'All plugins are up to date'}
@@ -176,95 +178,80 @@ export default function PluginUpdatesList() {
           <button
             onClick={fetchPlugins}
             disabled={loading}
-            className="text-stone-400 hover:text-white transition-colors disabled:opacity-50"
+            className="text-gray-400 hover:text-green-400 rounded-lg p-2 hover:bg-white/5 transition-colors disabled:opacity-50"
             aria-label="Refresh plugin updates"
           >
-            <svg
-              className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RefreshCw className={cn('h-5 w-5', loading && 'animate-spin')} />
           </button>
         </div>
 
         {/* Update Message */}
         {updateMessage && (
-          <div className={`p-4 border-b-2 border-stone-700 ${
-            updateMessage.success
-              ? 'bg-green-900/30 text-green-400'
-              : 'bg-red-900/30 text-red-400'
-          }`}>
+          <div
+            className={cn(
+              'p-4 border-b border-green-500/10',
+              updateMessage.success ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-300'
+            )}
+          >
             <div className="font-semibold">{updateMessage.plugin}</div>
             <div className="text-sm">{updateMessage.message}</div>
           </div>
         )}
 
         {/* Plugins List */}
-        <div className="divide-y-2 divide-stone-700">
+        <div className="divide-y divide-white/5">
           {data.plugins.length === 0 ? (
-            <div className="p-8 text-center text-stone-400">
-              No plugins found
-            </div>
+            <div className="p-8 text-center text-gray-400">No plugins found</div>
           ) : (
             data.plugins.map((plugin) => (
-              <div key={plugin.filename} className="p-4 hover:bg-stone-700/30 transition-colors">
+              <div key={plugin.filename} className="p-4 hover:bg-white/[0.03] transition-colors">
                 <div className="flex items-start justify-between gap-4">
                   {/* Plugin Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <h4 className="text-white font-semibold truncate">{plugin.name}</h4>
                       {plugin.updateAvailable && (
-                        <span className="flex-shrink-0 inline-flex items-center px-2 py-1 text-xs bg-green-900/30 border border-green-700 text-green-400 rounded">
+                        <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 text-xs bg-green-500/10 border border-green-500/30 text-green-400 rounded-full">
                           Update Available
                         </span>
                       )}
                       {getSourceBadge(plugin.updateSource)}
                     </div>
-                    
+
                     {plugin.description && (
-                      <p className="text-stone-400 text-sm mb-2 line-clamp-2">{plugin.description}</p>
+                      <p className="text-gray-400 text-sm mb-2 line-clamp-2">{plugin.description}</p>
                     )}
-                    
-                    <div className="flex items-center gap-4 text-sm">
+
+                    <div className="flex items-center gap-4 text-sm flex-wrap">
                       <div>
-                        <span className="text-stone-500">Current:</span>{' '}
+                        <span className="text-gray-500">Current:</span>{' '}
                         <span className="text-white font-mono">{plugin.version}</span>
                       </div>
-                      
+
                       {plugin.updateAvailable && plugin.latestVersion && (
                         <div>
-                          <span className="text-stone-500">Latest:</span>{' '}
+                          <span className="text-gray-500">Latest:</span>{' '}
                           <span className="text-green-400 font-mono">{plugin.latestVersion}</span>
                         </div>
                       )}
-                      
+
                       {plugin.apiVersion && (
                         <div>
-                          <span className="text-stone-500">API:</span>{' '}
-                          <span className="text-stone-400 font-mono">{plugin.apiVersion}</span>
+                          <span className="text-gray-500">API:</span>{' '}
+                          <span className="text-gray-400 font-mono">{plugin.apiVersion}</span>
                         </div>
                       )}
                     </div>
-                    
+
                     {plugin.website && (
                       <a
                         href={plugin.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-sm inline-flex items-center gap-1 mt-2"
+                        className="text-green-400/80 hover:text-green-400 text-sm inline-flex items-center gap-1 mt-2"
                       >
-                        <span>Visit website</span>
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
+                        Visit website
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
                   </div>
@@ -272,21 +259,20 @@ export default function PluginUpdatesList() {
                   {/* Update Button */}
                   <div className="flex-shrink-0">
                     {plugin.updateAvailable && plugin.downloadUrl ? (
-                      <button
+                      <Button
+                        variant="primary"
                         onClick={() => handleUpdateClick(plugin)}
                         disabled={updatingPlugin === plugin.filename}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-sm"
                       >
-                        {updatingPlugin === plugin.filename ? 'Updating...' : 'Update'}
-                      </button>
+                        {updatingPlugin === plugin.filename ? 'Updating…' : 'Update'}
+                      </Button>
                     ) : plugin.updateAvailable ? (
-                      <div className="px-4 py-2 bg-stone-700 text-stone-400 text-sm rounded cursor-not-allowed">
+                      <div className="px-4 py-2 rounded-xl bg-white/5 text-gray-400 text-sm cursor-not-allowed">
                         Manual Update Required
                       </div>
                     ) : (
-                      <div className="px-4 py-2 text-stone-500 text-sm">
-                        Up to date
-                      </div>
+                      <div className="px-4 py-2 text-gray-500 text-sm">Up to date</div>
                     )}
                   </div>
                 </div>
@@ -298,55 +284,45 @@ export default function PluginUpdatesList() {
 
       {/* Confirmation Modal */}
       {selectedPlugin && (
-        <Modal
-          isOpen={showConfirmModal}
-          onClose={() => setShowConfirmModal(false)}
-          title="Confirm Plugin Update"
-          size="small"
-        >
-          <div className="text-white mb-6">
+        <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Confirm Plugin Update" size="small">
+          <div className="text-gray-200 mb-6">
             <p className="mb-4">
-              Are you sure you want to update <strong>{selectedPlugin.name}</strong>?
+              Are you sure you want to update <strong className="text-white">{selectedPlugin.name}</strong>?
             </p>
-            <div className="bg-stone-700/50 p-4 rounded mb-4 space-y-2">
+            <div className="bg-black/30 border border-white/5 p-4 rounded-xl mb-4 space-y-2">
               <div>
-                <span className="text-stone-400">Current version:</span>{' '}
+                <span className="text-gray-500">Current version:</span>{' '}
                 <span className="text-white font-mono">{selectedPlugin.version}</span>
               </div>
               <div>
-                <span className="text-stone-400">New version:</span>{' '}
+                <span className="text-gray-500">New version:</span>{' '}
                 <span className="text-green-400 font-mono">{selectedPlugin.latestVersion}</span>
               </div>
-              <div>
-                <span className="text-stone-400">Source:</span>{' '}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Source:</span>
                 {getSourceBadge(selectedPlugin.updateSource)}
               </div>
             </div>
-            <div className="bg-yellow-900/30 border border-yellow-700 p-4 rounded mb-4">
-              <p className="text-yellow-400 text-sm">
-                ⚠ <strong>Warning:</strong> The server will be stopped and restarted during the update.
-                Players will be disconnected. The update will be rolled back automatically if the server
-                fails to start.
+            <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl mb-4">
+              <p className="text-yellow-300 text-sm flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Warning:</strong> The server will be stopped and restarted during the update.
+                  Players will be disconnected. The update will be rolled back automatically if the server
+                  fails to start.
+                </span>
               </p>
             </div>
-            <p className="text-stone-400 text-sm">
-              This process may take 1-2 minutes to complete.
-            </p>
+            <p className="text-gray-500 text-sm">This process may take 1-2 minutes to complete.</p>
           </div>
 
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowConfirmModal(false)}
-              className="flex-1 px-4 py-2 bg-stone-700 hover:bg-stone-600 text-white rounded transition-colors"
-            >
+            <Button variant="ghost" onClick={() => setShowConfirmModal(false)} className="flex-1">
               Cancel
-            </button>
-            <button
-              onClick={handleConfirmUpdate}
-              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded transition-colors"
-            >
+            </Button>
+            <Button variant="primary" onClick={handleConfirmUpdate} className="flex-1">
               Update Plugin
-            </button>
+            </Button>
           </div>
         </Modal>
       )}

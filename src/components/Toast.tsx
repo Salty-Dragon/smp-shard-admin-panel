@@ -1,9 +1,11 @@
 /**
  * Toast Notification Component
- * Displays temporary success/error/info messages
+ * Displays temporary success/error/info messages, themed to match the website.
  */
 
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle, AlertTriangle, Info, X, type LucideIcon } from 'lucide-react';
 
 export interface ToastProps {
   message: string;
@@ -12,63 +14,41 @@ export interface ToastProps {
   duration?: number;
 }
 
+const TOAST_STYLES: Record<ToastProps['type'], { icon: LucideIcon; accent: string; border: string }> = {
+  success: { icon: CheckCircle2, accent: 'text-green-400', border: 'border-green-500/40' },
+  error: { icon: XCircle, accent: 'text-red-400', border: 'border-red-500/40' },
+  warning: { icon: AlertTriangle, accent: 'text-yellow-400', border: 'border-yellow-500/40' },
+  info: { icon: Info, accent: 'text-blue-400', border: 'border-blue-500/40' },
+};
+
 export default function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
-
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return '✓';
-      case 'error':
-        return '✕';
-      case 'warning':
-        return '⚠';
-      case 'info':
-        return 'ℹ';
-      default:
-        return 'ℹ';
-    }
-  };
-
-  const getColors = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-600 border-green-700';
-      case 'error':
-        return 'bg-red-600 border-red-700';
-      case 'warning':
-        return 'bg-yellow-600 border-yellow-700';
-      case 'info':
-        return 'bg-blue-600 border-blue-700';
-      default:
-        return 'bg-stone-600 border-stone-700';
-    }
-  };
+  const { icon: Icon, accent, border } = TOAST_STYLES[type];
 
   return (
-    <div
-      className={`fixed bottom-4 right-4 z-50 ${getColors()} border-4 p-4 max-w-md shadow-lg animate-slide-in`}
+    <motion.div
+      className={`fixed bottom-4 right-4 z-50 glass-strong border ${border} rounded-xl p-4 max-w-md shadow-2xl`}
       role="alert"
+      initial={{ opacity: 0, x: 40, y: 0 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 40 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
     >
-      <div className="flex items-start space-x-3">
-        <span className="text-2xl">{getIcon()}</span>
-        <div className="flex-1">
-          <p className="text-white font-semibold">{message}</p>
-        </div>
+      <div className="flex items-start gap-3">
+        <Icon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${accent}`} />
+        <p className="flex-1 text-gray-100 text-sm font-medium">{message}</p>
         <button
           onClick={onClose}
-          className="text-white hover:text-stone-200 font-bold text-xl"
+          className="text-gray-400 hover:text-white rounded p-0.5 hover:bg-white/5 transition-colors"
           aria-label="Close notification"
         >
-          ×
+          <X className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
