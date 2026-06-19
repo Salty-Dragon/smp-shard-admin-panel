@@ -5,6 +5,7 @@
 
 import Head from 'next/head';
 import Link from 'next/link';
+import { Pickaxe, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -14,19 +15,22 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-8">
-            🎮 SMP Admin Panel
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Minecraft Server Management System
-          </p>
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
+        <div className="absolute inset-0 grid-bg" />
+        <div className="absolute inset-0 vignette" />
+
+        <div className="relative z-10 text-center">
+          <span className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 mb-6 glow-green-sm">
+            <Pickaxe className="h-10 w-10" />
+          </span>
+          <h1 className="text-5xl sm:text-6xl font-bold text-green-400 text-glow mb-4">SMP Admin Panel</h1>
+          <p className="text-xl text-gray-400 mb-8">Minecraft Server Management System</p>
           <Link
             href="/dashboard"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-green-500 hover:bg-green-400 text-black font-bold px-8 py-3 transition-all hover:glow-green-sm"
           >
-            Go to Dashboard →
+            Go to Dashboard <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </div>

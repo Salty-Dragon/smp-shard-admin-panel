@@ -7,7 +7,7 @@ import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useEffect, useState } from 'react';
 
 interface Permission {
@@ -168,33 +168,11 @@ export default function RolesPage({ user }: RolesPageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">Roles Management</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-green-400 hover:text-green-300 font-semibold"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </header>
+      <AppShell user={user} active="roles">
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-stone-800 border-4 border-stone-700 p-6">
+        <div className="space-y-6">
+          <div className="glass border border-green-500/20 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-green-400">
                 🛡️ Roles Management
@@ -202,23 +180,23 @@ export default function RolesPage({ user }: RolesPageProps) {
             </div>
 
             {error && (
-              <div className="bg-red-900 border-2 border-red-700 p-4 mb-4 text-red-200">
+              <div className="bg-red-500/10 border border-red-500/30 p-4 mb-4 text-red-300">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="bg-green-900 border-2 border-green-700 p-4 mb-4 text-green-200">
+              <div className="bg-green-500/10 border border-green-500/30 p-4 mb-4 text-green-300">
                 {success}
               </div>
             )}
 
             {loading ? (
-              <div className="text-center py-8 text-stone-400">
+              <div className="text-center py-8 text-gray-400">
                 Loading roles...
               </div>
             ) : roles.length === 0 ? (
-              <div className="text-center py-8 text-stone-400">
+              <div className="text-center py-8 text-gray-400">
                 No roles found
               </div>
             ) : (
@@ -226,7 +204,7 @@ export default function RolesPage({ user }: RolesPageProps) {
                 {roles.map((role) => (
                   <div
                     key={role.id}
-                    className="bg-stone-900 border-2 border-stone-700 p-6"
+                    className="bg-black/30 border border-white/10 p-6"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
@@ -234,11 +212,11 @@ export default function RolesPage({ user }: RolesPageProps) {
                           {role.name}
                         </h3>
                         {role.description && (
-                          <p className="text-stone-400 mb-3">
+                          <p className="text-gray-400 mb-3">
                             {role.description}
                           </p>
                         )}
-                        <div className="flex items-center space-x-6 text-sm text-stone-500">
+                        <div className="flex items-center space-x-6 text-sm text-gray-500">
                           <span>
                             Created: {new Date(role.createdAt).toLocaleDateString()}
                           </span>
@@ -254,7 +232,7 @@ export default function RolesPage({ user }: RolesPageProps) {
                       {canEditRole(role.name) && editingRoleId !== role.id && (
                         <button
                           onClick={() => startEditing(role)}
-                          className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 border-2 border-green-900 font-semibold"
+                          className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-semibold"
                         >
                           ✏️ Edit Permissions
                         </button>
@@ -262,7 +240,7 @@ export default function RolesPage({ user }: RolesPageProps) {
                     </div>
 
                     {editingRoleId === role.id ? (
-                      <div className="mt-4 border-t-2 border-stone-700 pt-4">
+                      <div className="mt-4 border-t-2 border-white/10 pt-4">
                         <h4 className="text-lg font-semibold text-green-400 mb-3">
                           Edit Permissions for {role.name}
                         </h4>
@@ -275,7 +253,7 @@ export default function RolesPage({ user }: RolesPageProps) {
                             return (
                               <label
                                 key={permKey}
-                                className="flex items-start space-x-3 p-3 bg-stone-800 border-2 border-stone-700 hover:border-stone-600 cursor-pointer"
+                                className="flex items-start space-x-3 p-3 glass border border-green-500/20 rounded-2xl hover:border-white/10 cursor-pointer"
                               >
                                 <input
                                   type="checkbox"
@@ -287,7 +265,7 @@ export default function RolesPage({ user }: RolesPageProps) {
                                   <div className="font-semibold text-green-400">
                                     {perm.resource} : {perm.action}
                                   </div>
-                                  <div className="text-sm text-stone-400">
+                                  <div className="text-sm text-gray-400">
                                     {perm.description}
                                   </div>
                                 </div>
@@ -300,22 +278,22 @@ export default function RolesPage({ user }: RolesPageProps) {
                           <button
                             onClick={() => savePermissions(role.id)}
                             disabled={saving}
-                            className="bg-green-700 hover:bg-green-600 disabled:bg-stone-700 text-white px-6 py-2 border-2 border-green-900 font-semibold"
+                            className="bg-green-600 hover:bg-green-500 disabled:bg-white/5 text-white px-6 py-2 rounded-xl font-semibold"
                           >
                             {saving ? 'Saving...' : '💾 Save Permissions'}
                           </button>
                           <button
                             onClick={cancelEditing}
                             disabled={saving}
-                            className="bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 text-white px-6 py-2 border-2 border-stone-900 font-semibold"
+                            className="bg-white/5 hover:bg-white/10 disabled:opacity-50 text-white px-6 py-2 rounded-xl border border-white/10 font-semibold"
                           >
                             ❌ Cancel
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 border-t-2 border-stone-700 pt-4">
-                        <h4 className="text-sm font-semibold text-stone-500 mb-2">
+                      <div className="mt-4 border-t-2 border-white/10 pt-4">
+                        <h4 className="text-sm font-semibold text-gray-500 mb-2">
                           Current Permissions:
                         </h4>
                         {role.permissions && role.permissions.length > 0 ? (
@@ -323,18 +301,18 @@ export default function RolesPage({ user }: RolesPageProps) {
                             {role.permissions.map((perm) => (
                               <div
                                 key={perm.id}
-                                className="bg-stone-800 border border-stone-600 px-3 py-2 text-sm"
+                                className="glass border border-white/10 px-3 py-2 text-sm"
                               >
                                 <span className="text-green-400 font-semibold">
                                   {perm.resource}
                                 </span>
-                                <span className="text-stone-500"> : </span>
-                                <span className="text-stone-300">{perm.action}</span>
+                                <span className="text-gray-500"> : </span>
+                                <span className="text-gray-300">{perm.action}</span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-stone-500 text-sm">No permissions assigned</p>
+                          <p className="text-gray-500 text-sm">No permissions assigned</p>
                         )}
                       </div>
                     )}
@@ -343,11 +321,11 @@ export default function RolesPage({ user }: RolesPageProps) {
               </div>
             )}
 
-            <div className="mt-6 p-4 bg-stone-900 border-2 border-stone-700">
+            <div className="mt-6 p-4 bg-black/30 border border-white/10">
               <h3 className="text-xl font-bold text-green-400 mb-4">
                 📋 Available Permissions Reference
               </h3>
-              <p className="text-stone-400 text-sm mb-4">
+              <p className="text-gray-400 text-sm mb-4">
                 Below is a complete list of all available permissions in the system. 
                 Super Admin can assign these permissions to Admin and Moderator roles.
               </p>
@@ -364,17 +342,17 @@ export default function RolesPage({ user }: RolesPageProps) {
                       return acc;
                     }, {} as Record<string, PermissionDefinition[]>)
                   ).map(([resource, perms]) => (
-                    <div key={resource} className="bg-stone-800 border border-stone-600 p-4">
+                    <div key={resource} className="glass border border-white/10 p-4">
                       <h4 className="text-lg font-semibold text-green-400 mb-2 capitalize">
                         {resource}
                       </h4>
                       <div className="space-y-2">
                         {perms.map((perm) => (
                           <div key={`${perm.resource}:${perm.action}`} className="flex items-start space-x-3">
-                            <span className="text-stone-500 font-mono text-sm bg-stone-900 px-2 py-1 border border-stone-700 min-w-[80px]">
+                            <span className="text-gray-500 font-mono text-sm bg-black/30 px-2 py-1 border border-white/10 min-w-[80px]">
                               {perm.action}
                             </span>
-                            <span className="text-stone-300 text-sm">
+                            <span className="text-gray-300 text-sm">
                               {perm.description}
                             </span>
                           </div>
@@ -384,19 +362,19 @@ export default function RolesPage({ user }: RolesPageProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-stone-500 text-sm">Loading available permissions...</p>
+                <p className="text-gray-500 text-sm">Loading available permissions...</p>
               )}
             </div>
 
-            <div className="mt-4 p-4 bg-stone-900 border-2 border-stone-700">
-              <p className="text-stone-400 text-sm">
+            <div className="mt-4 p-4 bg-black/30 border border-white/10">
+              <p className="text-gray-400 text-sm">
                 ℹ️ Note: Super Admin role cannot be modified and has all permissions by default. 
                 Only Admin and Moderator roles can be edited through this interface.
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </AppShell>
     </>
   );
 }

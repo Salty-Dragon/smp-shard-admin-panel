@@ -61,10 +61,12 @@ interface AppShellProps {
   user: ShellUser;
   /** Key of the active nav item (highlights it). */
   active?: string;
+  /** Optional extra controls rendered in the header, left of the user info. */
+  headerActions?: ReactNode;
   children: ReactNode;
 }
 
-export default function AppShell({ user, active, children }: AppShellProps) {
+export default function AppShell({ user, active, headerActions, children }: AppShellProps) {
   const canSee = (item: NavItem) => !item.roles || item.roles.includes(user.role);
 
   return (
@@ -90,6 +92,7 @@ export default function AppShell({ user, active, children }: AppShellProps) {
           </Link>
 
           <div className="flex items-center gap-4">
+            {headerActions}
             <div className="text-right hidden sm:block">
               <p className="text-white font-semibold leading-tight">{user.name}</p>
               <p className="text-green-400/70 text-xs font-mono">{user.role}</p>

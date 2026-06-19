@@ -1,12 +1,14 @@
 /**
  * Login Page with 2FA Support
- * Minecraft-themed dark/green/brown design
+ * Themed to match the v1rtopia website (dark glass / green accent).
  */
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { motion } from 'framer-motion';
+import { Pickaxe, ShieldCheck, AlertTriangle, Loader2, ArrowLeft } from 'lucide-react';
 import packageJson from '../../package.json';
 
 export default function Login() {
@@ -41,12 +43,15 @@ export default function Login() {
       } else if (result?.ok) {
         router.push('/dashboard');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  const inputClass =
+    'w-full rounded-xl bg-black/40 border border-green-500/20 text-white px-4 py-3 focus:outline-none focus:border-green-500/60 focus:glow-green-sm transition-all';
 
   return (
     <>
@@ -55,30 +60,34 @@ export default function Login() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Minecraft-style background pattern */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(34, 197, 94, 0.1) 2px, rgba(34, 197, 94, 0.1) 4px)',
-        }}></div>
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4">
+        {/* Background layers */}
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
+        <div className="absolute inset-0 grid-bg" />
+        <div className="absolute inset-0 vignette" />
 
-        <div className="relative z-10 w-full max-w-md">
+        <motion.div
+          className="relative z-10 w-full max-w-md"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        >
           {/* Login Card */}
-          <div className="bg-stone-800 border-4 border-stone-700 shadow-2xl p-8">
+          <div className="glass-strong border border-green-500/25 rounded-2xl shadow-2xl glow-green-sm p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="text-6xl mb-4">⛏️</div>
-              <h1 className="text-3xl font-bold text-green-400 mb-2" style={{ 
-                textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-              }}>
-                SMP Admin Panel
-              </h1>
-              <p className="text-stone-400 text-sm">Server Management System</p>
+              <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 mb-4">
+                <Pickaxe className="h-8 w-8" />
+              </span>
+              <h1 className="text-3xl font-bold text-green-400 text-glow mb-1">SMP Admin Panel</h1>
+              <p className="text-gray-500 text-sm">Server Management System</p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 bg-red-900/50 border-2 border-red-700 p-4 text-red-200 text-sm">
-                ⚠️ {error}
+              <div className="mb-6 flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-red-300 text-sm">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                {error}
               </div>
             )}
 
@@ -88,7 +97,7 @@ export default function Login() {
                 <>
                   {/* Email */}
                   <div>
-                    <label htmlFor="email" className="block text-green-400 font-semibold mb-2">
+                    <label htmlFor="email" className="block text-green-400 font-medium mb-2 text-sm">
                       Email
                     </label>
                     <input
@@ -96,7 +105,7 @@ export default function Login() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
+                      className={inputClass}
                       required
                       disabled={loading}
                       autoComplete="email"
@@ -105,7 +114,7 @@ export default function Login() {
 
                   {/* Password */}
                   <div>
-                    <label htmlFor="password" className="block text-green-400 font-semibold mb-2">
+                    <label htmlFor="password" className="block text-green-400 font-medium mb-2 text-sm">
                       Password
                     </label>
                     <input
@@ -113,7 +122,7 @@ export default function Login() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
+                      className={inputClass}
                       required
                       disabled={loading}
                       autoComplete="current-password"
@@ -124,7 +133,7 @@ export default function Login() {
                 <>
                   {/* 2FA Code */}
                   <div>
-                    <label htmlFor="twoFactorCode" className="block text-green-400 font-semibold mb-2">
+                    <label htmlFor="twoFactorCode" className="block text-green-400 font-medium mb-2 text-sm">
                       2FA Code
                     </label>
                     <input
@@ -132,7 +141,7 @@ export default function Login() {
                       type="text"
                       value={twoFactorCode}
                       onChange={(e) => setTwoFactorCode(e.target.value)}
-                      className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 text-center text-2xl tracking-widest focus:border-green-500 focus:outline-none"
+                      className={`${inputClass} text-center text-2xl tracking-[0.5em] font-mono`}
                       placeholder="000000"
                       maxLength={6}
                       required
@@ -140,7 +149,7 @@ export default function Login() {
                       autoFocus
                       autoComplete="one-time-code"
                     />
-                    <p className="mt-2 text-stone-400 text-sm">
+                    <p className="mt-2 text-gray-500 text-sm">
                       Enter the 6-digit code from your authenticator app or email
                     </p>
                   </div>
@@ -153,10 +162,10 @@ export default function Login() {
                       setTwoFactorCode('');
                       setError('');
                     }}
-                    className="text-green-400 hover:text-green-300 text-sm"
+                    className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300 text-sm"
                     disabled={loading}
                   >
-                    ← Back to login
+                    <ArrowLeft className="h-4 w-4" /> Back to login
                   </button>
                 </>
               )}
@@ -165,16 +174,13 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white font-bold py-4 px-6 border-b-4 border-green-800 disabled:border-stone-800 active:border-b-0 active:mt-1 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-400 disabled:bg-white/5 disabled:text-gray-500 text-black font-bold py-3.5 px-6 transition-all hover:glow-green-sm"
               >
                 {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Logging in...
-                  </span>
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Logging in…
+                  </>
                 ) : needs2FA ? (
                   'Verify & Login'
                 ) : (
@@ -184,21 +190,14 @@ export default function Login() {
             </form>
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t-2 border-stone-700 text-center">
-              <p className="text-stone-500 text-xs">
-                🔐 Secured with 2FA Authentication
+            <div className="mt-8 pt-6 border-t border-green-500/10 text-center">
+              <p className="inline-flex items-center gap-1.5 text-gray-500 text-xs">
+                <ShieldCheck className="h-3.5 w-3.5" /> Secured with 2FA Authentication
               </p>
-              <p className="text-stone-600 text-xs mt-2">
-                v{packageJson.version}
-              </p>
+              <p className="text-gray-600 text-xs mt-2 font-mono">v{packageJson.version}</p>
             </div>
           </div>
-
-          {/* Additional Info */}
-          <div className="mt-4 text-center text-stone-500 text-sm">
-            <p>Default credentials: admin@smp-panel.local / admin123</p>
-          </div>
-        </div>
+        </motion.div>
       </div>
     </>
   );

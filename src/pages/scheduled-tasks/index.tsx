@@ -7,12 +7,11 @@ import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useEffect, useState } from 'react';
 import Spinner from '@/components/Spinner';
 import Toast from '@/components/Toast';
 import Modal from '@/components/Modal';
-import InstanceBanner from '@/components/InstanceBanner';
 import { useInstance } from '@/contexts/InstanceContext';
 
 interface ScheduledTask {
@@ -225,7 +224,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
       case 'ban': return 'text-red-400';
       case 'unban': return 'text-green-400';
       case 'custom': return 'text-purple-400';
-      default: return 'text-stone-400';
+      default: return 'text-gray-400';
     }
   };
 
@@ -246,7 +245,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
       case 'paused': return 'text-yellow-400';
       case 'completed': return 'text-blue-400';
       case 'failed': return 'text-red-400';
-      default: return 'text-stone-400';
+      default: return 'text-gray-400';
     }
   };
 
@@ -257,36 +256,12 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">Scheduled Tasks Management</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-green-400 hover:text-green-300 font-semibold"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </header>
+      <AppShell user={user} active="scheduled-tasks">
 
-        {/* Instance Banner */}
-        <InstanceBanner />
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-stone-800 border-4 border-stone-700 p-6">
+        <div className="space-y-6">
+          <div className="glass border border-green-500/20 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-yellow-400">
                 ⏰ Scheduled Tasks
@@ -294,13 +269,13 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleOpenModal()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 border-b-4 border-blue-800"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl"
                 >
                   + Create Task
                 </button>
                 <button
                   onClick={fetchTasks}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 border-b-4 border-green-800"
+                  className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-xl"
                 >
                   ↻ Refresh
                 </button>
@@ -316,7 +291,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="">All Statuses</option>
                   <option value="active">Active</option>
@@ -333,7 +308,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <select
                   value={filters.taskType}
                   onChange={(e) => setFilters({ ...filters, taskType: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="">All Types</option>
                   <option value="backup">Backup</option>
@@ -348,7 +323,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <label className="block text-green-400 font-semibold mb-2 text-sm">
                   Showing
                 </label>
-                <div className="bg-stone-900 border-2 border-stone-700 px-4 py-2 text-white">
+                <div className="bg-black/30 border border-white/10 px-4 py-2 text-white">
                   {tasks.length} tasks
                 </div>
               </div>
@@ -360,7 +335,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <Spinner size="large" message="Loading scheduled tasks..." />
               </div>
             ) : tasks.length === 0 ? (
-              <div className="text-center py-12 text-stone-400">
+              <div className="text-center py-12 text-gray-400">
                 No scheduled tasks found
               </div>
             ) : (
@@ -368,7 +343,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="bg-stone-900 border-2 border-stone-700 p-4 hover:border-green-700 transition-all"
+                    className="bg-black/30 border border-white/10 p-4 hover:border-green-500/30 transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
@@ -384,9 +359,9 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                             </span>
                           </div>
                           {task.description && (
-                            <p className="text-stone-300 text-sm mb-2">{task.description}</p>
+                            <p className="text-gray-300 text-sm mb-2">{task.description}</p>
                           )}
-                          <div className="flex items-center space-x-4 text-sm text-stone-500">
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span>Type: {task.scheduleType}</span>
                             {task.scheduleType === 'recurring' && task.cronExpression && (
                               <>
@@ -412,13 +387,13 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                       <div className="flex flex-col space-y-2 ml-4">
                         <button
                           onClick={() => handleOpenModal(task)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 border-b-4 border-blue-800"
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-xl"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(task.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 border-b-4 border-red-800"
+                          className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-xl"
                         >
                           Delete
                         </button>
@@ -430,7 +405,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
             )}
           </div>
         </div>
-      </div>
+      </AppShell>
 
       {/* Create/Edit Task Modal */}
       <Modal
@@ -448,7 +423,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+              className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
               required
               placeholder="Enter task name..."
             />
@@ -461,7 +436,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+              className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
               rows={3}
               placeholder="Describe what this task does..."
             />
@@ -475,7 +450,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
               <select
                 value={formData.taskType}
                 onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}
-                className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 required
                 disabled={!!editingTask}
               >
@@ -486,7 +461,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 <option value="custom">Custom</option>
               </select>
               {editingTask && (
-                <p className="text-stone-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs mt-1">
                   Task type cannot be changed after creation
                 </p>
               )}
@@ -499,7 +474,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
               <select
                 value={formData.scheduleType}
                 onChange={(e) => setFormData({ ...formData, scheduleType: e.target.value })}
-                className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 required
               >
                 <option value="once">Once</option>
@@ -517,7 +492,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 type="datetime-local"
                 value={formData.scheduledFor}
                 onChange={(e) => setFormData({ ...formData, scheduledFor: e.target.value })}
-                className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 required={formData.scheduleType === 'once'}
               />
             </div>
@@ -530,11 +505,11 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
                 type="text"
                 value={formData.cronExpression}
                 onChange={(e) => setFormData({ ...formData, cronExpression: e.target.value })}
-                className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 required={formData.scheduleType === 'recurring'}
                 placeholder="0 0 * * *"
               />
-              <p className="text-stone-500 text-xs mt-1">
+              <p className="text-gray-500 text-xs mt-1">
                 Examples: &quot;0 0 * * *&quot; (daily at midnight), &quot;0 */6 * * *&quot; (every 6 hours), &quot;0 0 * * 0&quot; (weekly on Sunday)
               </p>
             </div>
@@ -547,7 +522,7 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+              className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
               required
             >
               <option value="active">Active</option>
@@ -559,14 +534,14 @@ export default function ScheduledTasksPage({ user }: ScheduledTasksPageProps) {
             <button
               type="button"
               onClick={handleCloseModal}
-              className="bg-stone-600 hover:bg-stone-500 text-white px-6 py-2 border-b-4 border-stone-800"
+              className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-xl"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl disabled:opacity-50"
             >
               {submitting ? 'Saving...' : editingTask ? 'Update Task' : 'Create Task'}
             </button>

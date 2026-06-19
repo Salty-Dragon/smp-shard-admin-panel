@@ -6,8 +6,8 @@
 import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { signOut } from 'next-auth/react';
 import Head from 'next/head';
+import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import Spinner from '@/components/Spinner';
@@ -122,9 +122,6 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
-  };
 
   const updateSetting = <K extends keyof MetricsSettings>(
     key: K,
@@ -164,33 +161,10 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
         <meta name="description" content="Configure metrics collection and retention" />
       </Head>
 
-      <div className="min-h-screen bg-stone-900 text-stone-100">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 py-4">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <Link href="/dashboard" className="text-green-400 hover:text-green-300 transition-colors">
-                  <span className="text-2xl">🎮</span>
-                </Link>
-                <h1 className="text-2xl font-bold text-green-400">Metrics Settings</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-stone-300">{user.name}</span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+      <AppShell user={user} active="metrics-settings">
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
-          {/* Navigation */}
+        <main className="space-y-6">
           <div className="mb-6">
             <Link
               href="/dashboard"
@@ -202,13 +176,13 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
 
           {/* Status Messages */}
           {success && (
-            <div className="bg-green-900 border-2 border-green-600 p-4 mb-6 rounded">
+            <div className="bg-green-500/10 border-2 border-green-600 p-4 mb-6 rounded">
               <p className="text-green-100">✅ {success}</p>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-900 border-2 border-red-600 p-4 mb-6 rounded">
+            <div className="bg-red-500/10 border-2 border-red-600 p-4 mb-6 rounded">
               <p className="text-red-100">❌ {error}</p>
             </div>
           )}
@@ -218,12 +192,12 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
               <Spinner />
             </div>
           ) : !settings ? (
-            <div className="bg-stone-800 border-4 border-red-700 p-12 text-center">
+            <div className="glass border-4 border-red-500/30 p-12 text-center">
               <div className="text-6xl mb-4">⚠️</div>
               <h2 className="text-2xl font-bold text-red-400 mb-4">Error Loading Settings</h2>
               <button
                 onClick={fetchSettings}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
               >
                 Try Again
               </button>
@@ -231,17 +205,17 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
           ) : (
             <>
               {/* General Settings */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">General Metrics Settings</h2>
                 
                 <div className="space-y-4">
                   {/* Metrics Enabled */}
-                  <div className="flex items-center justify-between p-4 bg-stone-900 rounded">
+                  <div className="flex items-center justify-between p-4 bg-black/30 rounded">
                     <div className="flex-1">
-                      <label className="text-lg font-semibold text-stone-100">
+                      <label className="text-lg font-semibold text-gray-200">
                         Enable Metrics Collection
                       </label>
-                      <p className="text-sm text-stone-400 mt-1">
+                      <p className="text-sm text-gray-400 mt-1">
                         Master switch for all metrics collection. When disabled, the metrics API will return an error.
                       </p>
                     </div>
@@ -252,17 +226,17 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                         onChange={(e) => updateSetting('metricsEnabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-14 h-7 bg-stone-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                      <div className="w-14 h-7 bg-white/5 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
 
                   {/* History Collection */}
-                  <div className="flex items-center justify-between p-4 bg-stone-900 rounded">
+                  <div className="flex items-center justify-between p-4 bg-black/30 rounded">
                     <div className="flex-1">
-                      <label className="text-lg font-semibold text-stone-100">
+                      <label className="text-lg font-semibold text-gray-200">
                         Enable History Collection
                       </label>
-                      <p className="text-sm text-stone-400 mt-1">
+                      <p className="text-sm text-gray-400 mt-1">
                         Automatically save metrics to database for historical tracking and trend analysis.
                       </p>
                     </div>
@@ -273,16 +247,16 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                         onChange={(e) => updateSetting('historyCollectionEnabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-14 h-7 bg-stone-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                      <div className="w-14 h-7 bg-white/5 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
 
                   {/* Collection Interval */}
-                  <div className="p-4 bg-stone-900 rounded">
-                    <label className="text-lg font-semibold text-stone-100 block mb-2">
+                  <div className="p-4 bg-black/30 rounded">
+                    <label className="text-lg font-semibold text-gray-200 block mb-2">
                       Collection Interval (seconds)
                     </label>
-                    <p className="text-sm text-stone-400 mb-3">
+                    <p className="text-sm text-gray-400 mb-3">
                       How frequently metrics should be collected automatically (10-3600 seconds).
                     </p>
                     <input
@@ -291,23 +265,23 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                       max="3600"
                       value={settings.collectionIntervalSeconds}
                       onChange={(e) => updateSetting('collectionIntervalSeconds', parseInt(e.target.value) || 60)}
-                      className="w-full max-w-xs px-4 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                      className="w-full max-w-xs px-4 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Data Retention Settings */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Data Retention & Cleanup</h2>
                 
                 <div className="space-y-4">
                   {/* Retention Days */}
-                  <div className="p-4 bg-stone-900 rounded">
-                    <label className="text-lg font-semibold text-stone-100 block mb-2">
+                  <div className="p-4 bg-black/30 rounded">
+                    <label className="text-lg font-semibold text-gray-200 block mb-2">
                       Data Retention Period (days)
                     </label>
-                    <p className="text-sm text-stone-400 mb-3">
+                    <p className="text-sm text-gray-400 mb-3">
                       How long to keep raw metrics data before deletion (1-365 days).
                     </p>
                     <input
@@ -316,24 +290,24 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                       max="365"
                       value={settings.dataRetentionDays}
                       onChange={(e) => updateSetting('dataRetentionDays', parseInt(e.target.value) || 30)}
-                      className="w-full max-w-xs px-4 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                      className="w-full max-w-xs px-4 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Aggregation Settings */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Data Aggregation</h2>
                 
                 <div className="space-y-4">
                   {/* Aggregation Enabled */}
-                  <div className="flex items-center justify-between p-4 bg-stone-900 rounded">
+                  <div className="flex items-center justify-between p-4 bg-black/30 rounded">
                     <div className="flex-1">
-                      <label className="text-lg font-semibold text-stone-100">
+                      <label className="text-lg font-semibold text-gray-200">
                         Enable Data Aggregation
                       </label>
-                      <p className="text-sm text-stone-400 mt-1">
+                      <p className="text-sm text-gray-400 mt-1">
                         Automatically aggregate old data into hourly summaries to save space and improve performance.
                       </p>
                     </div>
@@ -344,16 +318,16 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                         onChange={(e) => updateSetting('aggregationEnabled', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-14 h-7 bg-stone-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                      <div className="w-14 h-7 bg-white/5 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
 
                   {/* Aggregation Threshold */}
-                  <div className="p-4 bg-stone-900 rounded">
-                    <label className="text-lg font-semibold text-stone-100 block mb-2">
+                  <div className="p-4 bg-black/30 rounded">
+                    <label className="text-lg font-semibold text-gray-200 block mb-2">
                       Aggregation Threshold (days)
                     </label>
-                    <p className="text-sm text-stone-400 mb-3">
+                    <p className="text-sm text-gray-400 mb-3">
                       Aggregate data older than this many days (1-90 days).
                     </p>
                     <input
@@ -362,22 +336,22 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                       max="90"
                       value={settings.aggregationThresholdDays}
                       onChange={(e) => updateSetting('aggregationThresholdDays', parseInt(e.target.value) || 7)}
-                      className="w-full max-w-xs px-4 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                      className="w-full max-w-xs px-4 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                     />
                   </div>
 
                   {/* Aggregation Interval */}
-                  <div className="p-4 bg-stone-900 rounded">
-                    <label className="text-lg font-semibold text-stone-100 block mb-2">
+                  <div className="p-4 bg-black/30 rounded">
+                    <label className="text-lg font-semibold text-gray-200 block mb-2">
                       Aggregation Interval (hours)
                     </label>
-                    <p className="text-sm text-stone-400 mb-3">
+                    <p className="text-sm text-gray-400 mb-3">
                       Time bucket size for aggregated data.
                     </p>
                     <select
                       value={settings.aggregationIntervalHours}
                       onChange={(e) => updateSetting('aggregationIntervalHours', parseInt(e.target.value))}
-                      className="w-full max-w-xs px-4 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                      className="w-full max-w-xs px-4 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                     >
                       <option value={1}>1 Hour</option>
                       <option value={6}>6 Hours</option>
@@ -389,14 +363,14 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
               </div>
 
               {/* Action Buttons */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Actions</h2>
                 
                 <div className="flex flex-wrap gap-4">
                   <button
                     onClick={handleSaveSettings}
                     disabled={saving}
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors"
+                    className="px-6 py-3 bg-green-600 hover:bg-green-500 disabled:bg-white/10 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors"
                   >
                     {saving ? 'Saving...' : '💾 Save Settings'}
                   </button>
@@ -404,22 +378,22 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
                   <button
                     onClick={handleRunMaintenance}
                     disabled={maintenanceRunning}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors"
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-white/10 disabled:cursor-not-allowed text-white font-semibold rounded transition-colors"
                   >
                     {maintenanceRunning ? 'Running...' : '🔧 Run Maintenance Now'}
                   </button>
 
                   <button
                     onClick={fetchSettings}
-                    className="px-6 py-3 bg-stone-700 hover:bg-stone-600 text-stone-300 font-semibold rounded transition-colors"
+                    className="px-6 py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold rounded transition-colors"
                   >
                     🔄 Reset to Saved
                   </button>
                 </div>
 
-                <div className="mt-4 p-4 bg-stone-900 rounded border border-stone-700">
-                  <p className="text-sm text-stone-400">
-                    <strong className="text-stone-300">Note:</strong> The maintenance task (cleanup and aggregation) 
+                <div className="mt-4 p-4 bg-black/30 rounded border border-white/10">
+                  <p className="text-sm text-gray-400">
+                    <strong className="text-gray-300">Note:</strong> The maintenance task (cleanup and aggregation) 
                     should be run periodically using a cron job or scheduled task. You can also run it manually here 
                     to test the configuration.
                   </p>
@@ -428,7 +402,7 @@ export default function MetricsSettingsPage({ user }: MetricsSettingsProps) {
             </>
           )}
         </main>
-      </div>
+      </AppShell>
     </>
   );
 }

@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 
@@ -54,23 +55,23 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🐛 Submit Error Report" size="medium">
+    <Modal isOpen={isOpen} onClose={onClose} title="Submit Error Report" size="medium">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-900/50 border-2 border-red-700 p-3 text-red-200 text-sm">
-            ⚠️ {error}
+          <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-3 text-red-300 text-sm flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" /> {error}
           </div>
         )}
 
         <div>
-          <label className="block text-green-400 font-semibold mb-2 text-sm">
+          <label className="block text-green-400 font-medium mb-2 text-sm">
             Title *
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2 focus:border-green-500 focus:outline-none"
+            className="w-full rounded-xl bg-black/40 border border-green-500/15 text-white px-4 py-2 focus:outline-none focus:border-green-500/50 transition-all"
             placeholder="Brief description of the issue"
             required
             disabled={loading}
@@ -78,13 +79,13 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
         </div>
 
         <div>
-          <label className="block text-green-400 font-semibold mb-2 text-sm">
+          <label className="block text-green-400 font-medium mb-2 text-sm">
             Description *
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2 focus:border-green-500 focus:outline-none"
+            className="w-full rounded-xl bg-black/40 border border-green-500/15 text-white px-4 py-2 focus:outline-none focus:border-green-500/50 transition-all"
             placeholder="Detailed description of what happened..."
             rows={6}
             required
@@ -93,13 +94,13 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
         </div>
 
         <div>
-          <label className="block text-green-400 font-semibold mb-2 text-sm">
+          <label className="block text-green-400 font-medium mb-2 text-sm">
             Severity *
           </label>
           <select
             value={formData.severity}
             onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-            className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2 focus:border-green-500 focus:outline-none"
+            className="w-full rounded-xl bg-black/40 border border-green-500/15 text-white px-4 py-2 focus:outline-none focus:border-green-500/50 transition-all"
             disabled={loading}
           >
             <option value="low">Low - Minor issue</option>
@@ -110,14 +111,14 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
         </div>
 
         <div>
-          <label className="block text-green-400 font-semibold mb-2 text-sm">
+          <label className="block text-green-400 font-medium mb-2 text-sm">
             Page (optional)
           </label>
           <input
             type="text"
             value={formData.page}
             onChange={(e) => setFormData({ ...formData, page: e.target.value })}
-            className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2 focus:border-green-500 focus:outline-none"
+            className="w-full rounded-xl bg-black/40 border border-green-500/15 text-white px-4 py-2 focus:outline-none focus:border-green-500/50 transition-all"
             placeholder="e.g., /dashboard or leave blank for current page"
             disabled={loading}
           />
@@ -126,7 +127,7 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
         <div className="flex space-x-4 pt-4">
           <button
             type="submit"
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 border-b-4 border-green-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-400 text-black font-semibold py-3 transition-all hover:glow-green-sm disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (
@@ -141,7 +142,7 @@ export default function ErrorReportModal({ isOpen, onClose, onSuccess }: ErrorRe
           <button
             type="button"
             onClick={onClose}
-            className="px-6 bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 border-b-4 border-stone-800"
+            className="px-6 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 font-medium py-3 transition-all"
             disabled={loading}
           >
             Cancel

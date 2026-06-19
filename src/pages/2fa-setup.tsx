@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { useSession } from 'next-auth/react';
 import Head from 'next/head';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
@@ -124,47 +124,25 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">2FA Setup</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-green-400 hover:text-green-300 font-semibold"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </header>
+      <AppShell user={user} active="2fa">
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-stone-800 border-4 border-stone-700 p-8">
+            <div className="glass border border-green-500/20 rounded-2xl p-8">
               <h2 className="text-3xl font-bold text-green-400 mb-6 text-center">
                 🔐 Two-Factor Authentication Setup
               </h2>
 
               {/* Error/Success Messages */}
               {error && (
-                <div className="mb-6 bg-red-900/50 border-2 border-red-700 p-4 text-red-200">
+                <div className="mb-6 bg-red-500/10 border border-red-500/30 p-4 text-red-300">
                   ⚠️ {error}
                 </div>
               )}
 
               {success && (
-                <div className="mb-6 bg-green-900/50 border-2 border-green-700 p-4 text-green-200">
+                <div className="mb-6 bg-green-500/10 border border-green-500/30 p-4 text-green-300">
                   ✓ {success}
                 </div>
               )}
@@ -172,7 +150,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
               {/* Step 1: Select Method */}
               {step === 'select' && (
                 <div className="space-y-6">
-                  <p className="text-stone-300 text-center mb-8">
+                  <p className="text-gray-300 text-center mb-8">
                     Choose your preferred 2FA method to secure your account
                   </p>
 
@@ -180,13 +158,13 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                     {/* Email OTP */}
                     <button
                       onClick={() => handleSelectMethod('email')}
-                      className="bg-stone-900 border-2 border-stone-700 hover:border-green-500 p-6 text-left transition-all"
+                      className="bg-black/30 border border-white/10 hover:border-green-500 p-6 text-left transition-all"
                     >
                       <div className="text-4xl mb-3">📧</div>
                       <h3 className="text-xl font-bold text-green-400 mb-2">
                         Email OTP
                       </h3>
-                      <p className="text-stone-400 text-sm">
+                      <p className="text-gray-400 text-sm">
                         Receive a one-time password via email each time you log in
                       </p>
                     </button>
@@ -194,13 +172,13 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                     {/* Google Authenticator */}
                     <button
                       onClick={() => handleSelectMethod('totp')}
-                      className="bg-stone-900 border-2 border-stone-700 hover:border-green-500 p-6 text-left transition-all"
+                      className="bg-black/30 border border-white/10 hover:border-green-500 p-6 text-left transition-all"
                     >
                       <div className="text-4xl mb-3">📱</div>
                       <h3 className="text-xl font-bold text-green-400 mb-2">
                         Google Authenticator
                       </h3>
-                      <p className="text-stone-400 text-sm">
+                      <p className="text-gray-400 text-sm">
                         Use an authenticator app to generate time-based codes
                       </p>
                     </button>
@@ -215,7 +193,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                     <h3 className="text-xl font-bold text-green-400 mb-4">
                       Scan QR Code with Google Authenticator
                     </h3>
-                    <p className="text-stone-400 mb-6">
+                    <p className="text-gray-400 mb-6">
                       1. Open Google Authenticator app<br />
                       2. Tap the + button<br />
                       3. Scan this QR code
@@ -226,19 +204,19 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                         <img src={qrCode} alt="QR Code" className="w-64 h-64" />
                       </div>
                     ) : (
-                      <div className="bg-stone-900 p-8 mb-4">
+                      <div className="bg-black/30 p-8 mb-4">
                         <div className="animate-spin h-8 w-8 border-4 border-green-500 border-t-transparent rounded-full mx-auto"></div>
                       </div>
                     )}
 
-                    <div className="bg-stone-900 border-2 border-stone-700 p-4 mb-6">
-                      <p className="text-stone-400 text-sm mb-2">Manual Entry Key:</p>
+                    <div className="bg-black/30 border border-white/10 p-4 mb-6">
+                      <p className="text-gray-400 text-sm mb-2">Manual Entry Key:</p>
                       <code className="text-green-400 font-mono">{secret}</code>
                     </div>
 
                     <button
                       onClick={() => setStep('verify')}
-                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 border-b-4 border-green-800"
+                      className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-xl"
                     >
                       Continue to Verification →
                     </button>
@@ -253,15 +231,15 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                   <h3 className="text-xl font-bold text-green-400 mb-4">
                     Email OTP Setup
                   </h3>
-                  <p className="text-stone-400 mb-6">
-                    We'll send a verification code to: <br />
+                  <p className="text-gray-400 mb-6">
+                    We&apos;ll send a verification code to: <br />
                     <span className="text-white font-semibold">{user.email}</span>
                   </p>
 
                   <button
                     onClick={requestEmailOTP}
                     disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white font-bold py-3 px-8 border-b-4 border-green-800 disabled:border-stone-800"
+                    className="bg-green-600 hover:bg-green-500 disabled:bg-white/10 text-white font-bold py-3 px-8 rounded-xl"
                   >
                     {loading ? 'Sending...' : 'Send Verification Code'}
                   </button>
@@ -275,7 +253,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                     <h3 className="text-xl font-bold text-green-400 mb-4">
                       Enter Verification Code
                     </h3>
-                    <p className="text-stone-400 mb-6">
+                    <p className="text-gray-400 mb-6">
                       {method === 'totp'
                         ? 'Enter the 6-digit code from Google Authenticator'
                         : 'Enter the code sent to your email'}
@@ -285,7 +263,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
-                      className="w-full max-w-xs mx-auto bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 text-center text-2xl tracking-widest focus:border-green-500 focus:outline-none"
+                      className="w-full max-w-xs mx-auto bg-black/30 border border-white/10 text-white px-4 py-3 text-center text-2xl tracking-widest focus:border-green-500 focus:outline-none"
                       placeholder="000000"
                       maxLength={6}
                       required
@@ -301,14 +279,14 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
                         setMethod(null);
                         setCode('');
                       }}
-                      className="bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 px-6 border-b-4 border-stone-900"
+                      className="bg-white/5 hover:bg-white/10 text-white font-bold py-3 px-6 rounded-xl"
                     >
                       ← Back
                     </button>
                     <button
                       type="submit"
                       disabled={loading || code.length !== 6}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-stone-600 text-white font-bold py-3 px-8 border-b-4 border-green-800 disabled:border-stone-800"
+                      className="bg-green-600 hover:bg-green-500 disabled:bg-white/10 text-white font-bold py-3 px-8 rounded-xl"
                     >
                       {loading ? 'Verifying...' : 'Enable 2FA'}
                     </button>
@@ -318,7 +296,7 @@ export default function TwoFactorSetup({ user }: TwoFactorSetupProps) {
             </div>
           </div>
         </div>
-      </div>
+      </AppShell>
     </>
   );
 }

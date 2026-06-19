@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { RefreshCw, AlertTriangle, Server } from 'lucide-react';
 import Modal from './Modal';
 import Spinner from './Spinner';
 import { useInstance } from '@/contexts/InstanceContext';
@@ -103,7 +104,7 @@ export default function ServerVersionCard() {
 
   if (loading && !version) {
     return (
-      <div className="bg-stone-800 border-2 border-stone-700 p-6 rounded-lg">
+      <div className="glass border border-green-500/20 p-6 rounded-2xl">
         <Spinner size="small" message="Loading version info..." />
       </div>
     );
@@ -111,14 +112,14 @@ export default function ServerVersionCard() {
 
   if (error) {
     return (
-      <div className="bg-stone-800 border-2 border-stone-700 p-6 rounded-lg">
+      <div className="glass border border-red-500/20 p-6 rounded-2xl">
         <div className="text-center">
-          <div className="text-red-400 text-4xl mb-2">⚠</div>
+          <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-red-400" />
           <h3 className="text-lg font-semibold text-white mb-2">Error Loading Version</h3>
-          <p className="text-stone-400 text-sm mb-4">{error}</p>
+          <p className="text-gray-400 text-sm mb-4">{error}</p>
           <button
             onClick={fetchVersion}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            className="px-4 py-2 bg-green-500 hover:bg-green-400 text-black font-semibold rounded-xl transition-colors"
           >
             Retry
           </button>
@@ -133,29 +134,19 @@ export default function ServerVersionCard() {
 
   return (
     <>
-      <div className="bg-stone-800 border-2 border-stone-700 p-6 rounded-lg">
+      <div className="glass border border-green-500/20 p-6 rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-green-400">Server Version</h3>
+          <h3 className="text-lg font-semibold text-green-400 flex items-center gap-2">
+            <Server className="h-5 w-5" /> Server Version
+          </h3>
           <button
             onClick={fetchVersion}
             disabled={loading}
-            className="text-stone-400 hover:text-white transition-colors disabled:opacity-50"
+            className="text-gray-400 hover:text-green-400 rounded-lg p-1.5 hover:bg-white/5 transition-colors disabled:opacity-50"
             aria-label="Refresh version info"
           >
-            <svg
-              className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
@@ -166,14 +157,14 @@ export default function ServerVersionCard() {
           </div>
           <div className="flex items-center gap-4">
             <div>
-              <div className="text-sm text-stone-400">Current Build</div>
+              <div className="text-sm text-gray-400">Current Build</div>
               <div className="text-xl font-semibold text-white">#{version.currentBuild}</div>
             </div>
             {version.updateAvailable && (
               <>
-                <div className="text-stone-600">→</div>
+                <div className="text-gray-600">→</div>
                 <div>
-                  <div className="text-sm text-stone-400">Latest Build</div>
+                  <div className="text-sm text-gray-400">Latest Build</div>
                   <div className="text-xl font-semibold text-green-400">#{version.latestBuild}</div>
                 </div>
               </>
@@ -191,7 +182,7 @@ export default function ServerVersionCard() {
           </div>
         ) : (
           <div className="mb-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-stone-700/30 border border-stone-600 rounded text-stone-400 text-sm">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded text-gray-400 text-sm">
               <span className="text-lg">✓</span>
               <span>Up to date</span>
             </div>
@@ -240,7 +231,7 @@ export default function ServerVersionCard() {
               fails to start.
             </p>
           </div>
-          <p className="text-stone-400 text-sm">
+          <p className="text-gray-400 text-sm">
             This process may take 1-2 minutes to complete.
           </p>
         </div>
@@ -248,7 +239,7 @@ export default function ServerVersionCard() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowConfirmModal(false)}
-            className="flex-1 px-4 py-2 bg-stone-700 hover:bg-stone-600 text-white rounded transition-colors"
+            className="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors"
           >
             Cancel
           </button>

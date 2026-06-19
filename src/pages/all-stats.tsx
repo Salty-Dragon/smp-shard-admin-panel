@@ -7,8 +7,8 @@
 import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { signOut } from 'next-auth/react';
 import Head from 'next/head';
+import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
@@ -119,9 +119,6 @@ export default function AllStats({ user }: AllStatsProps) {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
-  };
 
   return (
     <>
@@ -130,33 +127,10 @@ export default function AllStats({ user }: AllStatsProps) {
         <meta name="description" content="Detailed server statistics and monitoring" />
       </Head>
 
-      <div className="min-h-screen bg-stone-900 text-stone-100">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 py-4">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <Link href="/dashboard" className="text-green-400 hover:text-green-300 transition-colors">
-                  <span className="text-2xl">🎮</span>
-                </Link>
-                <h1 className="text-2xl font-bold text-green-400">Detailed Statistics</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-stone-300">{user.name}</span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+      <AppShell user={user} active="">
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
-          {/* Navigation */}
+        <main className="space-y-6">
           <div className="mb-6">
             <Link
               href="/dashboard"
@@ -167,7 +141,7 @@ export default function AllStats({ user }: AllStatsProps) {
           </div>
 
           {/* Time Range Selector */}
-          <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+          <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
             <h2 className="text-xl font-bold text-green-400 mb-4">Time Range</h2>
             <div className="flex flex-wrap gap-4 mb-4">
               <button
@@ -175,7 +149,7 @@ export default function AllStats({ user }: AllStatsProps) {
                 className={`px-6 py-2 rounded transition-colors ${
                   timeRange === '24h'
                     ? 'bg-green-600 text-white'
-                    : 'bg-stone-700 text-stone-300 hover:bg-stone-600'
+                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 }`}
               >
                 Last 24 Hours
@@ -185,7 +159,7 @@ export default function AllStats({ user }: AllStatsProps) {
                 className={`px-6 py-2 rounded transition-colors ${
                   timeRange === '7d'
                     ? 'bg-green-600 text-white'
-                    : 'bg-stone-700 text-stone-300 hover:bg-stone-600'
+                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 }`}
               >
                 Last 7 Days
@@ -195,7 +169,7 @@ export default function AllStats({ user }: AllStatsProps) {
                 className={`px-6 py-2 rounded transition-colors ${
                   timeRange === '30d'
                     ? 'bg-green-600 text-white'
-                    : 'bg-stone-700 text-stone-300 hover:bg-stone-600'
+                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 }`}
               >
                 Last 30 Days
@@ -205,7 +179,7 @@ export default function AllStats({ user }: AllStatsProps) {
                 className={`px-6 py-2 rounded transition-colors ${
                   timeRange === 'custom'
                     ? 'bg-green-600 text-white'
-                    : 'bg-stone-700 text-stone-300 hover:bg-stone-600'
+                    : 'bg-white/5 text-gray-300 hover:bg-white/10'
                 }`}
               >
                 Custom Range
@@ -214,29 +188,29 @@ export default function AllStats({ user }: AllStatsProps) {
             
             {/* Custom Date Range Picker */}
             {timeRange === 'custom' && (
-              <div className="flex flex-wrap gap-4 items-end mt-4 p-4 bg-stone-900 rounded">
+              <div className="flex flex-wrap gap-4 items-end mt-4 p-4 bg-black/30 rounded">
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-stone-300 mb-2 text-sm">Start Date</label>
+                  <label className="block text-gray-300 mb-2 text-sm">Start Date</label>
                   <input
                     type="datetime-local"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                   />
                 </div>
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-stone-300 mb-2 text-sm">End Date</label>
+                  <label className="block text-gray-300 mb-2 text-sm">End Date</label>
                   <input
                     type="datetime-local"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                   />
                 </div>
                 <button
                   onClick={fetchHistoricalMetrics}
                   disabled={!customStartDate || !customEndDate}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-stone-600 disabled:cursor-not-allowed text-white rounded transition-colors"
+                  className="px-6 py-2 bg-green-600 hover:bg-green-500 disabled:bg-white/10 disabled:cursor-not-allowed text-white rounded transition-colors"
                 >
                   Apply
                 </button>
@@ -244,7 +218,7 @@ export default function AllStats({ user }: AllStatsProps) {
             )}
             
             {/* Auto-Refresh Controls */}
-            <div className="flex flex-wrap gap-4 items-center mt-4 pt-4 border-t border-stone-700">
+            <div className="flex flex-wrap gap-4 items-center mt-4 pt-4 border-t border-white/10">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -253,17 +227,17 @@ export default function AllStats({ user }: AllStatsProps) {
                   onChange={(e) => setAutoRefresh(e.target.checked)}
                   className="w-4 h-4 accent-green-600"
                 />
-                <label htmlFor="autoRefresh" className="text-stone-300">
+                <label htmlFor="autoRefresh" className="text-gray-300">
                   Auto-refresh
                 </label>
               </div>
               {autoRefresh && (
                 <div className="flex items-center gap-2">
-                  <label className="text-stone-300 text-sm">Interval:</label>
+                  <label className="text-gray-300 text-sm">Interval:</label>
                   <select
                     value={refreshInterval}
                     onChange={(e) => setRefreshInterval(parseInt(e.target.value) as 10 | 30)}
-                    className="px-3 py-1 bg-stone-700 text-stone-100 rounded border border-stone-600 focus:border-green-400 focus:outline-none"
+                    className="px-3 py-1 bg-white/5 text-gray-200 rounded border border-white/10 focus:border-green-400 focus:outline-none"
                   >
                     <option value={10}>10 seconds</option>
                     <option value={30}>30 seconds</option>
@@ -272,7 +246,7 @@ export default function AllStats({ user }: AllStatsProps) {
               )}
               <button
                 onClick={fetchHistoricalMetrics}
-                className="px-4 py-1 bg-stone-700 hover:bg-stone-600 text-stone-300 rounded transition-colors text-sm"
+                className="px-4 py-1 bg-white/5 hover:bg-white/10 text-gray-300 rounded transition-colors text-sm"
               >
                 🔄 Refresh Now
               </button>
@@ -284,40 +258,40 @@ export default function AllStats({ user }: AllStatsProps) {
               <Spinner />
             </div>
           ) : error ? (
-            <div className="bg-stone-800 border-4 border-red-700 p-12 text-center">
+            <div className="glass border-4 border-red-500/30 p-12 text-center">
               <div className="text-6xl mb-4">⚠️</div>
               <h2 className="text-2xl font-bold text-red-400 mb-4">Error Loading Data</h2>
-              <p className="text-stone-300 mb-4">
+              <p className="text-gray-300 mb-4">
                 {error}
               </p>
               <button
                 onClick={fetchHistoricalMetrics}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
               >
                 Try Again
               </button>
             </div>
           ) : metricsData.length === 0 ? (
-            <div className="bg-stone-800 border-4 border-stone-700 p-12 text-center">
+            <div className="glass border border-green-500/20 rounded-2xl p-12 text-center">
               <div className="text-6xl mb-4">📊</div>
               <h2 className="text-2xl font-bold text-green-400 mb-4">No Historical Data Yet</h2>
-              <p className="text-stone-300 mb-4">
+              <p className="text-gray-300 mb-4">
                 Start collecting real-time server metrics to view historical trends.
               </p>
-              <div className="text-stone-400 text-sm space-y-2">
+              <div className="text-gray-400 text-sm space-y-2">
                 <p>
                   To begin collecting data, call the metrics API with the{' '}
-                  <code className="bg-stone-900 px-2 py-1 rounded">?saveHistory=true</code>{' '}
+                  <code className="bg-black/30 px-2 py-1 rounded">?saveHistory=true</code>{' '}
                   parameter (requires authentication):
                 </p>
-                <code className="bg-stone-900 px-3 py-2 rounded block text-xs text-left max-w-2xl mx-auto overflow-x-auto">
+                <code className="bg-black/30 px-3 py-2 rounded block text-xs text-left max-w-2xl mx-auto overflow-x-auto">
                   curl http://localhost:3000/apanel44/api/monitoring/metrics?saveHistory=true
                 </code>
                 <p className="pt-2">
                   For complete setup instructions including authentication, see{' '}
                   <span className="text-green-400">TESTING_DEPLOYMENT_GUIDE.md</span>.
                 </p>
-                <p className="text-xs text-stone-500 pt-2">
+                <p className="text-xs text-gray-500 pt-2">
                   Metrics include: CPU usage, memory usage, database stats, and real Minecraft player counts
                 </p>
               </div>
@@ -325,7 +299,7 @@ export default function AllStats({ user }: AllStatsProps) {
           ) : (
             <>
               {/* CPU Usage Chart */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">CPU Usage Trend</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={metricsData}>
@@ -360,7 +334,7 @@ export default function AllStats({ user }: AllStatsProps) {
               </div>
 
               {/* Memory Usage Chart */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Memory Usage Trend</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={metricsData}>
@@ -395,7 +369,7 @@ export default function AllStats({ user }: AllStatsProps) {
               </div>
 
               {/* Player Count Chart */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Player Count Trend</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={metricsData}>
@@ -429,7 +403,7 @@ export default function AllStats({ user }: AllStatsProps) {
               </div>
 
               {/* Disk Usage Chart */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Disk Usage Trend</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={metricsData}>
@@ -465,7 +439,7 @@ export default function AllStats({ user }: AllStatsProps) {
               </div>
 
               {/* Server Status History */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6 mb-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-green-400 mb-4">Server Status History</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={metricsData}>
@@ -506,18 +480,18 @@ export default function AllStats({ user }: AllStatsProps) {
                 <div className="mt-4 flex items-center justify-center gap-6 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-green-500 rounded"></div>
-                    <span className="text-stone-300">Online</span>
+                    <span className="text-gray-300">Online</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-red-500 rounded"></div>
-                    <span className="text-stone-300">Offline</span>
+                    <span className="text-gray-300">Offline</span>
                   </div>
                 </div>
               </div>
             </>
           )}
         </main>
-      </div>
+      </AppShell>
     </>
   );
 }

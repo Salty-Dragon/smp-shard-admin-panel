@@ -7,7 +7,7 @@ import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useEffect, useState } from 'react';
 import Spinner from '@/components/Spinner';
 import Toast from '@/components/Toast';
@@ -109,7 +109,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
       case 'high': return 'text-orange-400';
       case 'medium': return 'text-yellow-400';
       case 'low': return 'text-green-400';
-      default: return 'text-stone-400';
+      default: return 'text-gray-400';
     }
   };
 
@@ -130,40 +130,18 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">Error Reports Management</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-green-400 hover:text-green-300 font-semibold"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </header>
+      <AppShell user={user} active="error-reports">
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-stone-800 border-4 border-stone-700 p-6">
+        <div className="space-y-6">
+          <div className="glass border border-green-500/20 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-yellow-400">
                 🐛 Error Reports
               </h2>
               <button
                 onClick={fetchErrorReports}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 border-b-4 border-green-800"
+                className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-xl"
               >
                 ↻ Refresh
               </button>
@@ -178,7 +156,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="">All Statuses</option>
                   <option value="open">Open</option>
@@ -195,7 +173,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                 <select
                   value={filters.severity}
                   onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="">All Severities</option>
                   <option value="critical">Critical</option>
@@ -209,7 +187,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                 <label className="block text-green-400 font-semibold mb-2 text-sm">
                   Showing
                 </label>
-                <div className="bg-stone-900 border-2 border-stone-700 px-4 py-2 text-white">
+                <div className="bg-black/30 border border-white/10 px-4 py-2 text-white">
                   {errorReports.length} reports
                 </div>
               </div>
@@ -221,7 +199,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                 <Spinner size="large" message="Loading error reports..." />
               </div>
             ) : errorReports.length === 0 ? (
-              <div className="text-center py-12 text-stone-400">
+              <div className="text-center py-12 text-gray-400">
                 No error reports found
               </div>
             ) : (
@@ -229,7 +207,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                 {errorReports.map((report) => (
                   <div
                     key={report.id}
-                    className="bg-stone-900 border-2 border-stone-700 p-4 hover:border-yellow-700 transition-all"
+                    className="bg-black/30 border border-white/10 p-4 hover:border-yellow-500/30 transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4 flex-1">
@@ -240,12 +218,12 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                             <span className={`text-xs uppercase font-semibold ${getSeverityColor(report.severity)}`}>
                               {report.severity}
                             </span>
-                            <span className="text-xs uppercase font-semibold text-stone-500">
+                            <span className="text-xs uppercase font-semibold text-gray-500">
                               {report.status}
                             </span>
                           </div>
-                          <p className="text-stone-300 text-sm mb-2">{report.description}</p>
-                          <div className="flex items-center space-x-4 text-sm text-stone-500">
+                          <p className="text-gray-300 text-sm mb-2">{report.description}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span>Reported by: {report.user.name}</span>
                             <span>•</span>
                             <span>{new Date(report.createdAt).toLocaleString()}</span>
@@ -263,7 +241,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                           <>
                             <button
                               onClick={() => setSelectedReport(report)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 border-b-4 border-blue-800"
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-xl"
                             >
                               Update
                             </button>
@@ -274,7 +252,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
 
                     {/* Update Form */}
                     {selectedReport?.id === report.id && (
-                      <div className="mt-4 pt-4 border-t-2 border-stone-700">
+                      <div className="mt-4 pt-4 border-t-2 border-white/10">
                         <div className="space-y-4">
                           <div>
                             <label className="block text-green-400 font-semibold mb-2 text-sm">
@@ -283,28 +261,28 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => handleUpdateStatus(report.id, 'in_progress')}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 border-b-4 border-yellow-800 disabled:opacity-50"
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-xl disabled:opacity-50"
                                 disabled={updating}
                               >
                                 In Progress
                               </button>
                               <button
                                 onClick={() => handleUpdateStatus(report.id, 'resolved')}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 border-b-4 border-green-800 disabled:opacity-50"
+                                className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl disabled:opacity-50"
                                 disabled={updating}
                               >
                                 Resolve
                               </button>
                               <button
                                 onClick={() => handleUpdateStatus(report.id, 'closed')}
-                                className="bg-stone-600 hover:bg-stone-500 text-white px-4 py-2 border-b-4 border-stone-800 disabled:opacity-50"
+                                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl disabled:opacity-50"
                                 disabled={updating}
                               >
                                 Close
                               </button>
                               <button
                                 onClick={() => setSelectedReport(null)}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 border-b-4 border-red-800"
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl"
                               >
                                 Cancel
                               </button>
@@ -317,7 +295,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
                             <textarea
                               value={resolution}
                               onChange={(e) => setResolution(e.target.value)}
-                              className="w-full bg-stone-950 border-2 border-stone-700 text-white px-4 py-2"
+                              className="w-full bg-black/40 border border-white/10 text-white px-4 py-2"
                               rows={3}
                               placeholder="Describe how the issue was resolved..."
                             />
@@ -331,7 +309,7 @@ export default function ErrorReportsPage({ user }: ErrorReportsPageProps) {
             )}
           </div>
         </div>
-      </div>
+      </AppShell>
 
       {/* Toast Notifications */}
       {toast && (

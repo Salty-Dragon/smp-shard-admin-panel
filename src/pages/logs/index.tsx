@@ -7,9 +7,9 @@ import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import Head from 'next/head';
+import AppShell from '@/components/AppShell';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import InstanceBanner from '@/components/InstanceBanner';
 import { useInstance } from '@/contexts/InstanceContext';
 
 interface ActivityLog {
@@ -138,7 +138,7 @@ export default function LogsPage({ user }: LogsPageProps) {
     if (actionType.includes('delete')) return 'text-red-400';
     if (actionType.includes('create')) return 'text-blue-400';
     if (actionType.includes('update')) return 'text-purple-400';
-    return 'text-stone-300';
+    return 'text-gray-300';
   };
 
   // Password protection for Super Admins
@@ -150,20 +150,20 @@ export default function LogsPage({ user }: LogsPageProps) {
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
 
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-          <div className="bg-stone-800 border-4 border-stone-700 p-8 max-w-md w-full">
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+          <div className="glass border border-green-500/20 rounded-2xl p-8 max-w-md w-full">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">🔒</div>
               <h2 className="text-2xl font-bold text-green-400 mb-2">
                 Protected Area
               </h2>
-              <p className="text-stone-400">
+              <p className="text-gray-400">
                 Enter password to access activity logs
               </p>
             </div>
 
             {passwordError && (
-              <div className="mb-4 bg-red-900/50 border-2 border-red-700 p-3 text-red-200 text-sm">
+              <div className="mb-4 bg-red-500/10 border border-red-500/30 p-3 text-red-300 text-sm">
                 ⚠️ {passwordError}
               </div>
             )}
@@ -174,13 +174,13 @@ export default function LogsPage({ user }: LogsPageProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
+                className="w-full bg-black/30 border border-white/10 text-white px-4 py-3 focus:border-green-500 focus:outline-none"
                 autoFocus
                 autoComplete="current-password"
               />
               <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 border-b-4 border-green-800"
+                className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl"
               >
                 Access Logs
               </button>
@@ -207,43 +207,19 @@ export default function LogsPage({ user }: LogsPageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">Activity Logs</p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard"
-              className="text-green-400 hover:text-green-300 font-semibold"
-            >
-              ← Back to Dashboard
-            </Link>
-          </div>
-        </header>
+      <AppShell user={user} active="logs">
 
-        {/* Instance Banner */}
-        <InstanceBanner />
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-stone-800 border-4 border-stone-700 p-6">
+        <div className="space-y-6">
+          <div className="glass border border-green-500/20 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-green-400">
                 📋 Activity Logs
               </h2>
               <button
                 onClick={fetchLogs}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 border-b-4 border-green-800"
+                className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-xl"
               >
                 ↻ Refresh
               </button>
@@ -258,7 +234,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                 <select
                   value={filters.hours}
                   onChange={(e) => setFilters({ ...filters, hours: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="1">Last Hour</option>
                   <option value="6">Last 6 Hours</option>
@@ -275,7 +251,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                 <select
                   value={filters.actionType}
                   onChange={(e) => setFilters({ ...filters, actionType: e.target.value })}
-                  className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2"
+                  className="w-full bg-black/30 border border-white/10 text-white px-4 py-2"
                 >
                   <option value="">All Actions</option>
                   <option value="login">Login</option>
@@ -291,7 +267,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                 <label className="block text-green-400 font-semibold mb-2 text-sm">
                   Showing
                 </label>
-                <div className="bg-stone-900 border-2 border-stone-700 px-4 py-2 text-white">
+                <div className="bg-black/30 border border-white/10 px-4 py-2 text-white">
                   {logs.length} logs
                 </div>
               </div>
@@ -299,11 +275,11 @@ export default function LogsPage({ user }: LogsPageProps) {
 
             {/* Logs List */}
             {loading ? (
-              <div className="text-center py-12 text-stone-400">
+              <div className="text-center py-12 text-gray-400">
                 Loading logs...
               </div>
             ) : logs.length === 0 ? (
-              <div className="text-center py-12 text-stone-400">
+              <div className="text-center py-12 text-gray-400">
                 No logs found
               </div>
             ) : (
@@ -311,7 +287,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                 {logs.map((log) => (
                   <div
                     key={log.id}
-                    className="bg-stone-900 border-2 border-stone-700 p-4 hover:border-green-700 transition-all"
+                    className="bg-black/30 border border-white/10 p-4 hover:border-green-500/30 transition-all"
                   >
                     <div className="flex items-start space-x-4">
                       <div className="text-2xl">{getActionIcon(log.actionType)}</div>
@@ -319,22 +295,22 @@ export default function LogsPage({ user }: LogsPageProps) {
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <span className="text-white font-semibold">{log.user.name}</span>
-                            <span className="text-stone-400 mx-2">•</span>
+                            <span className="text-gray-400 mx-2">•</span>
                             <span className={`font-semibold ${getActionColor(log.actionType)}`}>
                               {formatActionType(log.actionType)}
                             </span>
                             {log.resource && (
                               <>
-                                <span className="text-stone-400 mx-2">→</span>
-                                <span className="text-stone-400">{log.resource}</span>
+                                <span className="text-gray-400 mx-2">→</span>
+                                <span className="text-gray-400">{log.resource}</span>
                               </>
                             )}
                           </div>
-                          <span className="text-stone-500 text-sm">
+                          <span className="text-gray-500 text-sm">
                             {new Date(log.timestamp).toLocaleString()}
                           </span>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-stone-500">
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span>Role: {log.user.role.name}</span>
                           {log.ipAddress && (
                             <>
@@ -344,7 +320,7 @@ export default function LogsPage({ user }: LogsPageProps) {
                           )}
                         </div>
                         {log.details && (
-                          <div className="mt-2 bg-stone-950 border border-stone-800 p-2 text-stone-400 text-sm font-mono">
+                          <div className="mt-2 bg-black/40 border border-white/10 p-2 text-gray-400 text-sm font-mono">
                             {log.details}
                           </div>
                         )}
@@ -356,7 +332,7 @@ export default function LogsPage({ user }: LogsPageProps) {
             )}
           </div>
         </div>
-      </div>
+      </AppShell>
     </>
   );
 }

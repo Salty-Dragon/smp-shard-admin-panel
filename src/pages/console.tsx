@@ -6,14 +6,12 @@
 import { GetServerSideProps } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { signOut } from 'next-auth/react';
 import Head from 'next/head';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Toast from '@/components/Toast';
 import Spinner from '@/components/Spinner';
-import InstanceBanner from '@/components/InstanceBanner';
 import { ADMIN_ALLOWED_COMMANDS } from '@/lib/console-constants';
 import { useInstance } from '@/contexts/InstanceContext';
 
@@ -101,9 +99,6 @@ export default function ConsolePage({ user }: ConsolePageProps) {
     }
   }, [command, user.role]);
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' });
-  };
 
   const fetchCommandHistory = async () => {
     try {
@@ -221,137 +216,17 @@ export default function ConsolePage({ user }: ConsolePageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-stone-900 via-green-950 to-stone-900">
-        {/* Header */}
-        <header className="bg-stone-800 border-b-4 border-stone-700 shadow-lg">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl">⛏️</span>
-              <div>
-                <h1 className="text-2xl font-bold text-green-400" style={{ 
-                  textShadow: '2px 2px 0 rgba(0,0,0,0.8)'
-                }}>
-                  SMP Admin Panel
-                </h1>
-                <p className="text-stone-400 text-sm">Server Management System</p>
-              </div>
-            </div>
+      <AppShell user={user} active="console">
 
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-white font-semibold">{user.name}</p>
-                <p className="text-stone-400 text-sm">{user.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </header>
 
-        {/* Navigation */}
-        <nav className="bg-stone-800/50 border-b-2 border-stone-700">
-          <div className="container mx-auto px-4">
-            <div className="flex space-x-1">
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-              >
-                📊 Dashboard
-              </Link>
-              {(user.role === 'Super Admin' || user.role === 'Admin') && (
-                <>
-                  <Link
-                    href="/users"
-                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                  >
-                    👥 Users
-                  </Link>
-                  <Link
-                    href="/console"
-                    className="px-6 py-3 text-green-400 font-semibold border-b-4 border-green-500"
-                  >
-                    ⌨️ Console
-                  </Link>
-                  <Link
-                    href="/plugins"
-                    className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                  >
-                    🔌 Plugins
-                  </Link>
-                </>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/roles"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  🛡️ Roles
-                </Link>
-              )}
-              {(user.role === 'Super Admin' || user.role === 'Moderator') && (
-                <Link
-                  href="/logs"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  📋 Logs
-                </Link>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/error-reports"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  🐛 Error Reports
-                </Link>
-              )}
-              {(user.role === 'Super Admin' || user.role === 'Admin') && (
-                <Link
-                  href="/scheduled-tasks"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  ⏰ Tasks
-                </Link>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/metrics-settings"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  ⚙️ Metrics
-                </Link>
-              )}
-              {user.role === 'Super Admin' && (
-                <Link
-                  href="/migrate-instance-data"
-                  className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-                >
-                  🔄 Migrate Data
-                </Link>
-              )}
-              <Link
-                href="/2fa-setup"
-                className="px-6 py-3 text-stone-400 hover:text-green-400 font-semibold border-b-4 border-transparent hover:border-green-500"
-              >
-                🔐 2FA Setup
-              </Link>
-            </div>
-          </div>
-        </nav>
-
-        {/* Instance Banner */}
-        <InstanceBanner />
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Console Output Panel */}
             <div className="lg:col-span-2 space-y-6">
               {/* Info Card */}
-              <div className="bg-blue-900/30 border-4 border-blue-700 p-4">
+              <div className="bg-blue-500/10 border-4 border-blue-500/30 p-4">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">ℹ️</div>
                   <div>
@@ -371,32 +246,32 @@ export default function ConsolePage({ user }: ConsolePageProps) {
               </div>
 
               {/* Info Card for Special Commands */}
-              <div className="bg-green-900/30 border-4 border-green-700 p-4">
+              <div className="bg-green-500/10 border-4 border-green-500/30 p-4">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">🔧</div>
                   <div>
                     <h3 className="text-green-300 font-bold mb-2">Special Commands Available</h3>
-                    <p className="text-green-200 text-sm mb-2">
-                      <code className="bg-green-900/50 px-1">start</code> - Executes ./start.sh to start the server
+                    <p className="text-green-300 text-sm mb-2">
+                      <code className="bg-green-500/10 px-1">start</code> - Executes ./start.sh to start the server
                     </p>
-                    <p className="text-green-200 text-sm mb-2">
-                      <code className="bg-green-900/50 px-1">restart</code> - Safely restarts by sending stop command, then executes ./start.sh
+                    <p className="text-green-300 text-sm mb-2">
+                      <code className="bg-green-500/10 px-1">restart</code> - Safely restarts by sending stop command, then executes ./start.sh
                     </p>
-                    <p className="text-green-200 text-sm">
-                      <code className="bg-green-900/50 px-1">stop</code> - Stops the server (Super Admin only)
+                    <p className="text-green-300 text-sm">
+                      <code className="bg-green-500/10 px-1">stop</code> - Stops the server (Super Admin only)
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Command Output */}
-              <div className="bg-stone-800 border-4 border-stone-700 p-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-bold text-green-400">Command Output</h2>
                   {commandOutput.length > 0 && (
                     <button
                       onClick={clearOutput}
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm border-b-4 border-red-800 active:border-b-0 active:mt-1 font-semibold"
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm rounded-xl font-semibold"
                     >
                       Clear
                     </button>
@@ -405,21 +280,21 @@ export default function ConsolePage({ user }: ConsolePageProps) {
 
                 <div 
                   ref={outputRef}
-                  className="bg-black border-2 border-stone-700 p-4 h-96 overflow-y-auto font-mono text-sm"
+                  className="bg-black border border-white/10 p-4 h-96 overflow-y-auto font-mono text-sm"
                   style={{ scrollBehavior: 'smooth' }}
                 >
                   {commandOutput.length === 0 ? (
-                    <div className="text-stone-500 text-center mt-20">
+                    <div className="text-gray-500 text-center mt-20">
                       No commands executed yet. Type a command below to get started.
                     </div>
                   ) : (
                     commandOutput.map((result, index) => (
                       <div key={index} className="mb-4">
                         <div className="text-green-400 mb-1">
-                          <span className="text-stone-500">&gt;</span> {result.command}
+                          <span className="text-gray-500">&gt;</span> {result.command}
                         </div>
                         {result.success ? (
-                          <pre className="text-stone-300 whitespace-pre-wrap ml-4">
+                          <pre className="text-gray-300 whitespace-pre-wrap ml-4">
                             {result.output || '(No output)'}
                           </pre>
                         ) : (
@@ -427,7 +302,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                             Error: {result.error}
                           </div>
                         )}
-                        <div className="text-stone-600 text-xs mt-1 ml-4">
+                        <div className="text-gray-600 text-xs mt-1 ml-4">
                           {new Date(result.timestamp).toLocaleString()}
                         </div>
                       </div>
@@ -451,18 +326,18 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                         onChange={(e) => setCommand(e.target.value)}
                         placeholder="Enter command (e.g., list, whitelist add player)"
                         disabled={executing}
-                        className="w-full bg-stone-900 border-2 border-stone-700 text-white px-4 py-2 focus:outline-none focus:border-green-500 disabled:opacity-50 font-mono"
+                        className="w-full bg-black/30 border border-white/10 text-white px-4 py-2 focus:outline-none focus:border-green-500 disabled:opacity-50 font-mono"
                       />
                       
                       {/* Autocomplete suggestions */}
                       {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute z-10 w-full bg-stone-800 border-2 border-stone-600 mt-1 max-h-40 overflow-y-auto">
+                        <div className="absolute z-10 w-full glass border-2 border-white/10 mt-1 max-h-40 overflow-y-auto">
                           {suggestions.map((suggestion, idx) => (
                             <button
                               key={idx}
                               type="button"
                               onClick={() => handleSuggestionClick(suggestion)}
-                              className="w-full text-left px-4 py-2 text-stone-300 hover:bg-stone-700 hover:text-green-400 font-mono text-sm"
+                              className="w-full text-left px-4 py-2 text-gray-300 hover:bg-white/5 hover:text-green-400 font-mono text-sm"
                             >
                               {suggestion}
                             </button>
@@ -473,7 +348,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                     <button
                       type="submit"
                       disabled={executing || !command.trim()}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 border-b-4 border-green-800 active:border-b-0 active:mt-1 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {executing ? 'Executing...' : 'Execute'}
                     </button>
@@ -484,16 +359,16 @@ export default function ConsolePage({ user }: ConsolePageProps) {
 
             {/* Command History Sidebar */}
             <div className="space-y-6">
-              <div className="bg-stone-800 border-4 border-stone-700 p-6">
+              <div className="glass border border-green-500/20 rounded-2xl p-6">
                 <h2 className="text-2xl font-bold text-green-400 mb-4">Command History</h2>
                 
                 {loadingHistory ? (
                   <div className="text-center py-8">
                     <Spinner />
-                    <p className="text-stone-400 mt-2">Loading history...</p>
+                    <p className="text-gray-400 mt-2">Loading history...</p>
                   </div>
                 ) : commandHistory.length === 0 ? (
-                  <div className="text-stone-500 text-center py-8 text-sm">
+                  <div className="text-gray-500 text-center py-8 text-sm">
                     No command history available
                   </div>
                 ) : (
@@ -501,12 +376,12 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                     {commandHistory.map((item) => (
                       <div
                         key={item.id}
-                        className={`bg-stone-900 border-2 p-3 ${
+                        className={`bg-black/30 border-2 p-3 ${
                           item.details?.status === 'executed'
-                            ? 'border-green-700'
+                            ? 'border-green-500/30'
                             : item.details?.status === 'denied'
-                            ? 'border-red-700'
-                            : 'border-yellow-700'
+                            ? 'border-red-500/30'
+                            : 'border-yellow-500/30'
                         }`}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -520,21 +395,21 @@ export default function ConsolePage({ user }: ConsolePageProps) {
                             }`}>
                               {item.details?.command || 'Unknown command'}
                             </div>
-                            <div className="text-stone-400 text-xs mt-1">
+                            <div className="text-gray-400 text-xs mt-1">
                               by {item.user.name}
                             </div>
                           </div>
                           <div className={`text-xs font-bold px-2 py-1 ${
                             item.details?.status === 'executed'
-                              ? 'bg-green-900 text-green-300'
+                              ? 'bg-green-500/10 text-green-300'
                               : item.details?.status === 'denied'
-                              ? 'bg-red-900 text-red-300'
-                              : 'bg-yellow-900 text-yellow-300'
+                              ? 'bg-red-500/10 text-red-300'
+                              : 'bg-yellow-500/10 text-yellow-300'
                           }`}>
                             {item.details?.status || 'unknown'}
                           </div>
                         </div>
-                        <div className="text-stone-500 text-xs">
+                        <div className="text-gray-500 text-xs">
                           {new Date(item.timestamp).toLocaleString()}
                         </div>
                         {item.details?.reason && (
@@ -550,7 +425,7 @@ export default function ConsolePage({ user }: ConsolePageProps) {
             </div>
           </div>
         </div>
-      </div>
+      </AppShell>
 
       {toast && (
         <Toast
